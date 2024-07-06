@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="acc.css">
+    <title>matchme</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">MatchMe</div>
+            <div class="link">
+                <a class="gamematch" href="">Jouer un Match</a>
+                <a href="">Contacts</a>
+                <a href="">Apropos</a>
+            </div>
+            <div class="menu"><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0,0,256,256">
+                <g fill="#ffffff" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><g transform="scale(4,4)"><path d="M7,29v5l50,1v-7zM7,11v6h50v-6zM7,46v7l50,-1v-5z"></path></g></g>
+                </svg></div>
+        </nav>
+    </header>
+    <div class="container">
+        <h1>MatchMe est un site web qui vous permet de noter le score de votre match de genie eh herbe avec toutes les donnees necessaire.</h1>
+        <h3>Noter le score de votre match genie eh herbe en toute simplicite</h3>
+        <Button class="bout"><a href="formulaire.html">Noter un match</a></Button>
+    </div>
+</body>
+</html>
+
+
+<script>
+
+    const Menu = document.querySelector('.menu')
+    const Link = document.querySelector('.link')
+    const Cont = document.querySelector('.container')
+
+    Menu.onclick = function(){
+        Link.classList.toggle('open')
+        Cont.classList.toggle('contain')
+    }
+
+</script>

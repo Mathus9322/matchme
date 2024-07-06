@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="matchme.css">
+    <title>match play</title>
+    <script src="mai"></script>
+</head>
+<body>
+    <h1>BIENVENU DANS <u style="text-decoration: underline rgb(120, 15, 15);">MATCHME</u></h1>
+
+    <div class="match">
+        <p class="label">Calculer ici le score de votre match</p>
+        <div class="team">
+            <div class="teamname">
+            <div class="team1"><?php echo $_POST['teamAname'];?></div> <span id="tAn" class="tAn">0</span>
+            </div>
+            <div class="player">
+                <div class="playername"><div class="pl"><?php echo $_POST['playerA1'];?></div>
+                    <div class="teamnotem">
+                        <div class="markm"><input type="button" id="bp+10A1" value="+10" onclick="changeA1(nA1,tA, 10)"></div>
+                        <div class="markm"><input type="button" id="bp+20A1" value="+20" onclick="changeA1(nA1,tA, 20)"></div>
+                        <div class="markm"><input type="button" id="bp+30A1" value="+30" onclick="changeA1(nA1,tA, 30)"></div>
+                        <div class="markm"><input type="button" id="bp+40A1" value="+40" onclick="changeA1(nA1,tA, 40)"></div>
+                        <div class="markm"><input type="button" id="bp-10A1" value="-10" onclick="changeA1(nA1,tA, -10)"></div>
+                        <div class="markm"><input type="button" id="bp-20A1" value="-20" onclick="changeA1(nA1,tA, -20)"></div>
+                        <div class="markm"><input type="button" id="bp-30A1" value="-30" onclick="changeA1(nA1,tA, -30)"></div>
+                        <div class="markm"><input type="button" id="bp-40A1" value="-40" onclick="changeA1(nA1,tA, -40)"></div>
+                    </div>
+                </div><span class="points" id="npA1">0</span>
+                <div class="playername"><div class="pl"><?php echo $_POST['playerA2'];?></div>
+                    <div class="teamnotem">
+                        <div class="markm"><input type="button" id="bp+10A1" value="+10" onclick="changeA2(nA2,tA, 10)"></div>
+                        <div class="markm"><input type="button" id="bp+20A1" value="+20" onclick="changeA2(nA2,tA, 20)"></div>
+                        <div class="markm"><input type="button" id="bp+30A1" value="+30" onclick="changeA2(nA2,tA, 30)"></div>
+                        <div class="markm"><input type="button" id="bp+40A1" value="+40" onclick="changeA2(nA2,tA, 40)"></div>
+                        <div class="markm"><input type="button" id="bp-10A1" value="-10" onclick="changeA2(nA2,tA, -10)"></div>
+                        <div class="markm"><input type="button" id="bp-20A1" value="-20" onclick="changeA2(nA2,tA, -20)"></div>
+                        <div class="markm"><input type="button" id="bp-30A1" value="-30" onclick="changeA2(nA2,tA, -30)"></div>
+                        <div class="markm"><input type="button" id="bp-40A1" value="-40" onclick="changeA2(nA2,tA, -40)"></div>
+                    </div>
+                </div><span class="points" id="npA2">0</span>
+                <div class="playername"><div class="pl"><?php echo $_POST['playerA3'];?></div>
+                    <div class="teamnotem">
+                        <div class="markm"><input type="button" id="bp+10A1" value="+10" onclick="changeA3(nA3,tA, 10)"></div>
+                        <div class="markm"><input type="button" id="bp+20A1" value="+20" onclick="changeA3(nA3,tA, 20)"></div>
+                        <div class="markm"><input type="button" id="bp+30A1" value="+30" onclick="changeA3(nA3,tA, 30)"></div>
+                        <div class="markm"><input type="button" id="bp+40A1" value="+40" onclick="changeA3(nA3,tA, 40)"></div>
+                        <div class="markm"><input type="button" id="bp-10A1" value="-10" onclick="changeA3(nA3,tA, -10)"></div>
+                        <div class="markm"><input type="button" id="bp-20A1" value="-20" onclick="changeA3(nA3,tA, -20)"></div>
+                        <div class="markm"><input type="button" id="bp-30A1" value="-30" onclick="changeA3(nA3,tA, -30)"></div>
+                        <div class="markm"><input type="button" id="bp-40A1" value="-40" onclick="changeA3(nA3,tA, -40)"></div>
+                    </div>
+                </div><span class="points" id="npA3">0</span>
+                <div class="playername"><div class="pl"><?php echo $_POST['playerA4'];?></div>
+                    <div class="teamnotem">
+                        <div class="markm"><input type="button" id="bp+10A1" value="+10" onclick="changeA4(nA4,tA, 10)"></div>
+                        <div class="markm"><input type="button" id="bp+20A1" value="+20" onclick="changeA4(nA4,tA, 20)"></div>
+                        <div class="markm"><input type="button" id="bp+30A1" value="+30" onclick="changeA4(nA4,tA, 30)"></div>
+                        <div class="markm"><input type="button" id="bp+40A1" value="+40" onclick="changeA4(nA4,tA, 40)"></div>
+                        <div class="markm"><input type="button" id="bp-10A1" value="-10" onclick="changeA4(nA4,tA, -10)"></div>
+                        <div class="markm"><input type="button" id="bp-20A1" value="-20" onclick="changeA4(nA4,tA, -20)"></div>
+                        <div class="markm"><input type="button" id="bp-30A1" value="-30" onclick="changeA4(nA4,tA, -30)"></div>
+                        <div class="markm"><input type="button" id="bp-40A1" value="-40" onclick="changeA4(nA4,tA, -40)"></div>
+                    </div>
+                </div><span class="points" id="npA4">0</span>
+            </div>
+        </div>
+        <div class="team">
+            <div class="teamname">
+            <div class="team2"><?php echo $_POST['teamBname'];?></div> <span id="tBn" class="tBn">0</span>
+            </div>
+            <div class="player">
+                <div class="playername"><div class="pl"><?php echo $_POST['playerB1'];?></div>
+                    <div class="teamnotem">
+                        <div class="markm"><input type="button" id="bp+10A1" value="+10" onclick="changeB1(nB1,tB, 10)"></div>
+                        <div class="markm"><input type="button" id="bp+20A1" value="+20" onclick="changeB1(nB1,tB, 20)"></div>
+                        <div class="markm"><input type="button" id="bp+30A1" value="+30" onclick="changeB1(nB1,tB, 30)"></div>
+                        <div class="markm"><input type="button" id="bp+40A1" value="+40" onclick="changeB1(nB1,tB, 40)"></div>
+                        <div class="markm"><input type="button" id="bp-10A1" value="-10" onclick="changeB1(nB1,tB, -10)"></div>
+                        <div class="markm"><input type="button" id="bp-20A1" value="-20" onclick="changeB1(nB1,tB, -20)"></div>
+                        <div class="markm"><input type="button" id="bp-30A1" value="-30" onclick="changeB1(nB1,tB, -30)"></div>
+                        <div class="markm"><input type="button" id="bp-40A1" value="-40" onclick="changeB1(nB1,tB, -40)"></div>
+                    </div>
+                </div><span class="points" id="npB1">0</span>
+                <div class="playername"><div class="pl"><?php echo $_POST['playerB2'];?></div>
+                    <div class="teamnotem">
+                        <div class="markm"><input type="button" id="bp+10A1" value="+10" onclick="changeB2(nB2,tB, 10)"></div>
+                        <div class="markm"><input type="button" id="bp+20A1" value="+20" onclick="changeB2(nB2,tB, 20)"></div>
+                        <div class="markm"><input type="button" id="bp+30A1" value="+30" onclick="changeB2(nB2,tB, 30)"></div>
+                        <div class="markm"><input type="button" id="bp+40A1" value="+40" onclick="changeB2(nB2,tB, 40)"></div>
+                        <div class="markm"><input type="button" id="bp-10A1" value="-10" onclick="changeB2(nB2,tB, -10)"></div>
+                        <div class="markm"><input type="button" id="bp-20A1" value="-20" onclick="changeB2(nB2,tB, -20)"></div>
+                        <div class="markm"><input type="button" id="bp-30A1" value="-30" onclick="changeB2(nB2,tB, -30)"></div>
+                        <div class="markm"><input type="button" id="bp-40A1" value="-40" onclick="changeB2(nB2,tB, -40)"></div>
+                    </div>
+                </div><span class="points" id="npB2">0</span>
+                <div class="playername"><div class="pl"><?php echo $_POST['playerB3'];?></div>
+                    <div class="teamnotem">
+                        <div class="markm"><input type="button" id="bp+10A1" value="+10" onclick="changeB3(nB3,tB, 10)"></div>
+                        <div class="markm"><input type="button" id="bp+20A1" value="+20" onclick="changeB3(nB3,tB, 20)"></div>
+                        <div class="markm"><input type="button" id="bp+30A1" value="+30" onclick="changeB3(nB3,tB, 30)"></div>
+                        <div class="markm"><input type="button" id="bp+40A1" value="+40" onclick="changeB3(nB3,tB, 40)"></div>
+                        <div class="markm"><input type="button" id="bp-10A1" value="-10" onclick="changeB3(nB3,tB, -10)"></div>
+                        <div class="markm"><input type="button" id="bp-20A1" value="-20" onclick="changeB3(nB3,tB, -20)"></div>
+                        <div class="markm"><input type="button" id="bp-30A1" value="-30" onclick="changeB3(nB3,tB, -30)"></div>
+                        <div class="markm"><input type="button" id="bp-40A1" value="-40" onclick="changeB3(nB3,tB, -40)"></div>
+                    </div>
+                </div><span class="points" id="npB3">0</span>
+                <div class="playername"><div class="pl"><?php echo $_POST['playerB4'];?></div>
+                    <div class="teamnotem">
+                        <div class="markm"><input type="button" id="bp+10A1" value="+10" onclick="changeB4(nB4,tB, 10)"></div>
+                        <div class="markm"><input type="button" id="bp+20A1" value="+20" onclick="changeB4(nB4,tB, 20)"></div>
+                        <div class="markm"><input type="button" id="bp+30A1" value="+30" onclick="changeB4(nB4,tB, 30)"></div>
+                        <div class="markm"><input type="button" id="bp+40A1" value="+40" onclick="changeB4(nB4,tB, 40)"></div>
+                        <div class="markm"><input type="button" id="bp-10A1" value="-10" onclick="changeB4(nB4,tB, -10)"></div>
+                        <div class="markm"><input type="button" id="bp-20A1" value="-20" onclick="changeB4(nB4,tB, -20)"></div>
+                        <div class="markm"><input type="button" id="bp-30A1" value="-30" onclick="changeB4(nB4,tB, -30)"></div>
+                        <div class="markm"><input type="button" id="bp-40A1" value="-40" onclick="changeB4(nB4,tB, -40)"></div>
+                    </div>
+                </div><span class="points" id="npB4">0</span>
+            </div>
+        </div>
+        </div>
+        </div>
+    </div>
+
+    <div class="note">
+        <div class="teamnote">
+            <div class="mark"><input type="button" id="TA1+10" value="+10" onclick="changeCA(tA, 10)"></div>
+            <div class="mark"><input type="button" id="TA1+20" value="+20" onclick="changeCA(tA, 20)"></div>
+            <div class="mark"><input type="button" id="TA1+30" value="+30" onclick="changeCA(tA, 30)"></div>
+            <div class="mark"><input type="button" id="TA1+40" value="+40" onclick="changeCA(tA, 40)"></div>
+            <div class="mark"><input type="button" id="TA1-10" value="-10" onclick="changeCA(tA, -10)"></div>
+            <div class="mark"><input type="button" id="TA1-20" value="-20" onclick="changeCA(tA, -20)"></div>
+            <div class="mark"><input type="button" id="TA1-30" value="-30" onclick="changeCA(tA, -30)"></div>
+            <div class="mark"><input type="button" id="TA1-40" value="-40" onclick="changeCA(tA, -40)"></div>
+        </div>
+        <div class="teamnote">
+            <div class="mark"><input type="button" id="TB1+10" value="+10" onclick="changeCB(tB, 10)"></div>
+            <div class="mark"><input type="button" id="TB1+20" value="+20" onclick="changeCB(tB, 20)"></div>
+            <div class="mark"><input type="button" id="TB1+30" value="+30" onclick="changeCB(tB, 30)"></div>
+            <div class="mark"><input type="button" id="TB1+40" value="+40" onclick="changeCB(tB, 40)"></div>
+            <div class="mark"><input type="button" id="TB1-10" value="-10" onclick="changeCB(tB, -10)"></div>
+            <div class="mark"><input type="button" id="TB1-20" value="-20" onclick="changeCB(tB, -20)"></div>
+            <div class="mark"><input type="button" id="TB1-30" value="-30" onclick="changeCB(tB, -30)"></div>
+            <div class="mark"><input type="button" id="TB1-40" value="-40" onclick="changeCB(tB, -40)"></div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+<script>
+    var nA1= document.getElementById("npA1"), totA1=0;;   
+    var nA2= document.getElementById("npA2"), totA2=0;
+    var nA3= document.getElementById("npA3"), totA3=0;
+    var nA4= document.getElementById("npA4"), totA4=0;
+    var nB1= document.getElementById("npB1"), totB1=0;
+    var nB2= document.getElementById("npB2"), totB2=0;
+    var nB3= document.getElementById("npB3"), totB3=0;
+    var nB4= document.getElementById("npB4"), totB4=0;
+    
+    var tA = document.getElementById("tAn"), TA=0;
+    var tB = document.getElementById("tBn"), TB=0;
+    
+
+    function changeA1(p,t, i){
+        totA1+=i;
+        TA+= i;
+        p.textContent=totA1;
+        t.textContent=TA;
+    }
+    function changeA2(p,t, i){
+        totA2+=i;
+        TA+= i;
+        p.textContent=totA2;
+        t.textContent=TA;
+    }
+    function changeA3(p,t, i){
+        totA3+=i;
+        TA+= i;
+        p.textContent=totA3;
+        t.textContent=TA;
+    }
+    function changeA4(p,t, i){
+        totA4+=i;
+        TA+= i;
+        p.textContent=totA4;
+        t.textContent=TA;
+    }
+    function changeCA(t, i){
+        TA+= i;
+        t.textContent=TA;
+    }
+    ///lles fonction B
+    
+    function changeB1(p,t, i){
+        totB1+=i;
+        TB+= i;
+        p.textContent=totB1;
+        t.textContent=TB;
+    }
+    function changeB2(p,t, i){
+        totB2+=i;
+        TB+= i;
+        p.textContent=totB2;
+        t.textContent=TB;
+    }
+    function changeB3(p,t, i){
+        totB3+=i;
+        TB+= i;
+        p.textContent=totB3;
+        t.textContent=TB;
+    }
+    function changeB4(p,t, i){
+        totB4+=i;
+        TB+= i;
+        p.textContent=totB4;
+        t.textContent=TB;
+    }
+    function changeCB(t, i){
+        TB+= i;
+        t.textContent=TB;
+    }
+
+</script>
