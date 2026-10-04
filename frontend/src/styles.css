@@ -1,0 +1,23 @@
+:root {
+	color-scheme: light;
+	font-family: 'DejaVu Sans', sans-serif;
+	color: #182b28;
+	background: #f4f3ec;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	--ink: #182b28;
+	--muted: #727b73;
+	--paper: #f4f3ec;
+	--orange: #e85e36;
+	--green: #276c54;
+	--line: #d9dbd0;
+	--mono: 'DejaVu Sans Mono', monospace;
+	--display: 'Liberation Serif', Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+body { min-width: 360px; min-height: 100vh; margin: 0; }
+button, input { font: inherit; }
+button { color: inherit; }
+::selection { color: white; background: var(--green); }

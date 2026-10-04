@@ -1,0 +1,149 @@
+<main class="shell">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="MatchMe, accueil">match<span>me</span><i>.</i></a>
+    <span class="topbar-note">LE SCORE, EN DIRECT</span>
+    <span class="topbar-mark" aria-hidden="true">M</span>
+  </header>
+
+  @if (!started) {
+    <section class="intro">
+      <p class="eyebrow"><span class="live-dot"></span> GÉNIE EN HERBE · 4 CONTRE 4</p>
+      <h1>Que le meilleur<br /><em>l’emporte.</em></h1>
+      <p class="intro-copy">Composez les équipes. Gardez les points. Profitez du match.</p>
+    </section>
+
+    <form class="match-form" (ngSubmit)="createMatch()">
+      <div class="form-heading">
+        <div>
+          <p class="eyebrow">NOUVELLE RENCONTRE</p>
+          <h2>Les équipes</h2>
+        </div>
+        <span class="player-count">08 <span>JOUEURS</span></span>
+      </div>
+
+      <div class="team-setup">
+        <fieldset class="team-fields team-fields-a">
+          <legend><span class="team-index">A</span> ÉQUIPE À DOMICILE</legend>
+          <label class="team-name-label">
+            <span>Nom de l’équipe</span>
+            <input name="teamAName" [(ngModel)]="teamA.name" maxlength="80" placeholder="Ex. Les Lynx" required />
+          </label>
+          @for (player of teamA.players; track $index) {
+            <label class="player-input">
+              <span class="player-number">0{{ $index + 1 }}</span>
+              <input [name]="'teamAPlayer' + $index" [(ngModel)]="player.name" maxlength="60" [placeholder]="'Joueur ' + ($index + 1)" required />
+            </label>
+          }
+        </fieldset>
+
+        <div class="versus" aria-hidden="true"><span>VS</span></div>
+
+        <fieldset class="team-fields team-fields-b">
+          <legend><span class="team-index">B</span> ÉQUIPE À L’EXTÉRIEUR</legend>
+          <label class="team-name-label">
+            <span>Nom de l’équipe</span>
+            <input name="teamBName" [(ngModel)]="teamB.name" maxlength="80" placeholder="Ex. Les Comètes" required />
+          </label>
+          @for (player of teamB.players; track $index) {
+            <label class="player-input">
+              <span class="player-number">0{{ $index + 1 }}</span>
+              <input [name]="'teamBPlayer' + $index" [(ngModel)]="player.name" maxlength="60" [placeholder]="'Joueur ' + ($index + 1)" required />
+            </label>
+          }
+        </fieldset>
+      </div>
+
+      @if (errorMessage) {
+        <p class="error-message" role="alert">{{ errorMessage }}</p>
+      }
+      <div class="form-footer">
+        <span>Les deux équipes comptent quatre joueurs.</span>
+        <button class="primary-button" type="submit" [disabled]="saving">
+          {{ saving ? 'Préparation…' : 'Lancer le match' }} <span aria-hidden="true">↗</span>
+        </button>
+      </div>
+    </form>
+  } @else {
+    <section class="scoreboard">
+      <div class="scoreboard-heading">
+        <div>
+          <p class="eyebrow"><span class="live-dot"></span> MATCH EN COURS · Nº {{ matchId }}</p>
+          <h1>À vous de <em>jouer.</em></h1>
+        </div>
+        <button class="reset-button" type="button" (click)="resetMatch()">Nouveau match <span aria-hidden="true">↗</span></button>
+      </div>
+
+      <div class="score-summary">
+        <div class="summary-team summary-a">
+          <span class="summary-name">{{ teamA.name }}</span>
+          <strong>{{ teamScore(teamA) }}</strong>
+        </div>
+        <span class="summary-divider">—</span>
+        <div class="summary-team summary-b">
+          <span class="summary-name">{{ teamB.name }}</span>
+          <strong>{{ teamScore(teamB) }}</strong>
+        </div>
+      </div>
+
+      <div class="score-grid">
+        <article class="team-score-card team-card-a">
+          <header class="card-heading">
+            <div><span class="team-index">A</span><h2>{{ teamA.name }}</h2></div>
+            <strong>{{ teamScore(teamA) }}</strong>
+          </header>
+          <div class="player-list">
+            @for (player of teamA.players; track $index) {
+              <section class="player-row">
+                <div class="player-identity"><span class="player-number">0{{ $index + 1 }}</span><span>{{ player.name }}</span></div>
+                <strong class="player-score">{{ player.score }}</strong>
+                <div class="score-controls" [attr.aria-label]="'Ajouter ou retirer des points pour ' + player.name">
+                  @for (points of increments; track points) {
+                    <button type="button" [class.negative]="points < 0" (click)="changePlayerScore(player, teamA, points)" [attr.aria-label]="(points > 0 ? 'Ajouter ' : 'Retirer ') + Math.abs(points) + ' points à ' + player.name">{{ points > 0 ? '+' : '' }}{{ points }}</button>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+          <footer class="team-adjustment">
+            <span>Points d’équipe</span>
+            <div class="score-controls">
+              @for (points of increments; track points) {
+                <button type="button" [class.negative]="points < 0" (click)="changeTeamScore(teamA, points)" [attr.aria-label]="(points > 0 ? 'Ajouter ' : 'Retirer ') + Math.abs(points) + ' points à ' + teamA.name">{{ points > 0 ? '+' : '' }}{{ points }}</button>
+              }
+            </div>
+          </footer>
+        </article>
+
+        <article class="team-score-card team-card-b">
+          <header class="card-heading">
+            <div><span class="team-index">B</span><h2>{{ teamB.name }}</h2></div>
+            <strong>{{ teamScore(teamB) }}</strong>
+          </header>
+          <div class="player-list">
+            @for (player of teamB.players; track $index) {
+              <section class="player-row">
+                <div class="player-identity"><span class="player-number">0{{ $index + 1 }}</span><span>{{ player.name }}</span></div>
+                <strong class="player-score">{{ player.score }}</strong>
+                <div class="score-controls" [attr.aria-label]="'Ajouter ou retirer des points pour ' + player.name">
+                  @for (points of increments; track points) {
+                    <button type="button" [class.negative]="points < 0" (click)="changePlayerScore(player, teamB, points)" [attr.aria-label]="(points > 0 ? 'Ajouter ' : 'Retirer ') + Math.abs(points) + ' points à ' + player.name">{{ points > 0 ? '+' : '' }}{{ points }}</button>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+          <footer class="team-adjustment">
+            <span>Points d’équipe</span>
+            <div class="score-controls">
+              @for (points of increments; track points) {
+                <button type="button" [class.negative]="points < 0" (click)="changeTeamScore(teamB, points)" [attr.aria-label]="(points > 0 ? 'Ajouter ' : 'Retirer ') + Math.abs(points) + ' points à ' + teamB.name">{{ points > 0 ? '+' : '' }}{{ points }}</button>
+              }
+            </div>
+          </footer>
+        </article>
+      </div>
+    </section>
+  }
+
+  <footer class="page-footer"><span>MATCHME <i>·</i> LE PLAISIR DU JEU, LE SUIVI DU SCORE.</span><span>FAIT POUR LES ESPRITS VIFS.</span></footer>
+</main>
