@@ -91,8 +91,8 @@ import { Icon } from '../shared/icon';
         <h2>Prêts pour le premier buzz ?</h2>
         <p>Créez votre équipe, lancez un match amical ou organisez une compétition.</p>
       </div>
-      <a class="btn" [routerLink]="auth.canOrganize() ? '/competitions/nouvelle' : auth.isLoggedIn() ? '/amical' : '/inscription'">
-        {{ auth.canOrganize() ? 'Créer une compétition' : auth.isLoggedIn() ? 'Lancer un match amical' : 'Créer un compte' }} <app-icon name="arrow-right" />
+      <a class="btn" [routerLink]="auth.canOrganize() ? '/gestion' : auth.isLoggedIn() ? '/competitions' : '/inscription'">
+        {{ auth.canOrganize() ? 'Ouvrir l’espace gestion' : auth.isLoggedIn() ? 'Voir les compétitions' : 'Créer un compte' }} <app-icon name="arrow-right" />
       </a>
     </section>
   `,

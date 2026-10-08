@@ -42,11 +42,11 @@ interface Showcase {
         </p>
         <div class="hero-actions step" style="--d: 4">
           @if (auth.canOrganize()) {
-            <a class="btn btn-hero" routerLink="/competitions/nouvelle">Créer une compétition <span class="arrow"><app-icon name="arrow-right" /></span></a>
-            <a class="btn btn-outline" routerLink="/equipes/nouvelle">Créer une équipe</a>
+            <a class="btn btn-hero" routerLink="/gestion">Espace gestion <span class="arrow"><app-icon name="arrow-right" /></span></a>
+            <a class="btn btn-outline" routerLink="/competitions">Voir les compétitions</a>
           } @else if (auth.isLoggedIn()) {
-            <a class="btn btn-hero" routerLink="/amical">Lancer un match amical <span class="arrow"><app-icon name="arrow-right" /></span></a>
-            <a class="btn btn-outline" routerLink="/equipes/nouvelle">Créer une équipe</a>
+            <a class="btn btn-hero" routerLink="/competitions">Voir les compétitions <span class="arrow"><app-icon name="arrow-right" /></span></a>
+            <a class="btn btn-outline" routerLink="/a-propos">Découvrir MatchMe</a>
           } @else {
             <a class="btn btn-hero" routerLink="/inscription">Commencer gratuitement <span class="arrow"><app-icon name="arrow-right" /></span></a>
             <a class="btn btn-outline" routerLink="/a-propos">Découvrir MatchMe</a>

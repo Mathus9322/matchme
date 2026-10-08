@@ -156,7 +156,7 @@ export class FriendlyPage {
         start: this.startNow,
       })
       .subscribe({
-        next: (game) => this.router.navigate(['/matchs', game.id]),
+        next: (game) => this.router.navigate(['/gestion/matchs', game.id]),
         error: (e) => {
           this.error.set(errorMessage(e));
           this.saving.set(false);

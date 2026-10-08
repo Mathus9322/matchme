@@ -28,7 +28,7 @@ class MatchSheetTest extends TestCase
     {
         parent::setUp();
         $this->manager = User::factory()->manager()->create();
-        $this->captain = User::factory()->create();
+        $this->captain = User::factory()->manager()->create();
         $this->home = $this->teamWithPlayers($this->captain->id, 'Gaïndé', 7);
         $this->away = $this->teamWithPlayers($this->manager->id, 'Jambaar', 4);
         $competition = Competition::create(['owner_id' => $this->manager->id, 'name' => 'Coupe', 'status' => 'ongoing']);

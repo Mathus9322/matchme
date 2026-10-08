@@ -23,13 +23,13 @@ class CompetitionDocumentTest extends TestCase
     {
         parent::setUp();
         Storage::fake('local');
-        $this->organizer = User::factory()->create();
+        $this->organizer = User::factory()->manager()->create();
         $this->competition = Competition::create(['owner_id' => $this->organizer->id, 'name' => 'Coupe', 'status' => 'open']);
     }
 
     public function test_each_user_gets_a_private_folder_per_competition(): void
     {
-        $alice = Sanctum::actingAs(User::factory()->create(['name' => 'Alice']));
+        $alice = Sanctum::actingAs(User::factory()->manager()->create(['name' => 'Alice']));
 
         $this->post("/api/competitions/{$this->competition->id}/documents", [
             'files' => [UploadedFile::fake()->create('inscription.pdf', 120, 'application/pdf')],
@@ -40,7 +40,7 @@ class CompetitionDocumentTest extends TestCase
         Storage::disk('local')->assertExists($path);
 
         // Un autre participant ne voit que son propre dossier (vide).
-        $bob = Sanctum::actingAs(User::factory()->create());
+        $bob = Sanctum::actingAs(User::factory()->manager()->create());
         $this->getJson("/api/competitions/{$this->competition->id}/documents")
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.user.id', $bob->id)

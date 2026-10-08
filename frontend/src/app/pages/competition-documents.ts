@@ -13,7 +13,7 @@ import { Icon } from '../shared/icon';
   template: `
     <div class="page-head">
       <div>
-        <p class="eyebrow"><a class="row" style="gap: 6px; display: inline-flex" [routerLink]="['/competitions', id()]"><app-icon name="arrow-left" [size]="14" /> {{ competitionName() || 'Compétition' }}</a></p>
+        <p class="eyebrow"><a class="row" style="gap: 6px; display: inline-flex" [routerLink]="['/gestion/competitions', id()]"><app-icon name="arrow-left" [size]="14" /> {{ competitionName() || 'Compétition' }}</a></p>
         <h1 class="page-title">Dossiers <em>documents</em></h1>
         <p class="lead">
           Chaque participant dispose d’un dossier privé pour cette compétition : fiches d’inscription, autorisations, règlements…

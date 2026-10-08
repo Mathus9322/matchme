@@ -25,6 +25,13 @@ class DatabaseSeeder extends Seeder
             'role' => User::ROLE_ADMIN,
         ]);
 
+        // Simple utilisateur : n'a accès qu'aux pages publiques.
+        User::factory()->create([
+            'name' => 'Spectateur',
+            'email' => 'spectateur@matchme.test',
+            'password' => 'password',
+        ]);
+
         $organizer = User::factory()->create([
             'name' => 'Awa Diop',
             'email' => 'awa@matchme.test',

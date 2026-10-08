@@ -49,7 +49,7 @@ import { Icon } from '../shared/icon';
         </label>
         <p class="muted small" style="margin: 0">« Inscriptions ouvertes » permet aux capitaines d’inscrire eux-mêmes leur équipe.</p>
         <div class="form-actions">
-          <a class="btn btn-ghost" [routerLink]="id() ? ['/competitions', id()] : ['/competitions']">Annuler</a>
+          <a class="btn btn-ghost" [routerLink]="id() ? ['/gestion/competitions', id()] : ['/gestion/competitions']">Annuler</a>
           <button class="btn" type="submit" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
         </div>
       </form>
@@ -81,7 +81,7 @@ export class CompetitionFormPage implements OnInit {
     const id = this.id();
     const request = id ? this.api.updateCompetition(+id, payload) : this.api.createCompetition(payload);
     request.subscribe({
-      next: (c) => this.router.navigate(['/competitions', c.id]),
+      next: (c) => this.router.navigate(['/gestion/competitions', c.id]),
       error: (e) => {
         this.error.set(errorMessage(e));
         this.saving.set(false);

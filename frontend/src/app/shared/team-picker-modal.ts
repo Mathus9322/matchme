@@ -40,7 +40,7 @@ import { Modal } from './modal';
           }
         </ul>
       } @else {
-        <p class="empty">Toutes les équipes disponibles sont déjà inscrites. <a routerLink="/equipes/nouvelle">Créer une équipe</a></p>
+        <p class="empty">Toutes les équipes disponibles sont déjà inscrites. <a routerLink="/gestion/equipes/nouvelle">Créer une équipe</a></p>
       }
 
       <footer class="picker-foot">

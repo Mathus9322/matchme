@@ -31,7 +31,7 @@ import { Icon } from '../shared/icon';
           <span class="hint-icon"><app-icon name="alarm-clock" [size]="22" /></span>
           <p class="small" style="margin: 0">
             Votre photo apparaît sur la page des matchs que vous organisez ou arbitrez.
-            Vous recevez un e-mail et une notification 10 minutes avant chaque match de vos <a routerLink="/equipes">équipes</a>.
+            Vous recevez un e-mail et une notification 10 minutes avant chaque match de vos <a [routerLink]="auth.canOrganize() ? '/gestion/equipes' : '/equipes'">équipes</a>.
           </p>
         </section>
       </div>

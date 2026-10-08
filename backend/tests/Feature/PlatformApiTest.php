@@ -129,9 +129,32 @@ class PlatformApiTest extends TestCase
         $this->assertSame(1, $open->teams()->count());
     }
 
-    public function test_updating_a_team_syncs_its_players(): void
+    public function test_regular_users_only_access_public_pages(): void
     {
         Sanctum::actingAs(User::factory()->create());
+        $this->postJson('/api/teams', ['name' => 'X', 'players' => [['name' => 'a'], ['name' => 'b'], ['name' => 'c'], ['name' => 'd']]])->assertForbidden();
+        $this->getJson('/api/manage/overview')->assertForbidden();
+        $this->getJson('/api/competitions')->assertOk();
+        $this->getJson('/api/games?status=live')->assertOk();
+    }
+
+    public function test_manager_overview_is_scoped_to_their_data(): void
+    {
+        $manager = Sanctum::actingAs(User::factory()->manager()->create());
+        Competition::create(['owner_id' => $manager->id, 'name' => 'Mienne', 'status' => 'ongoing']);
+        Competition::create(['owner_id' => User::factory()->manager()->create()->id, 'name' => 'Autre', 'status' => 'ongoing']);
+
+        $this->getJson('/api/manage/overview')->assertOk()
+            ->assertJsonPath('stats.competitions', 1)
+            ->assertJsonPath('stats.ongoing_competitions', 1);
+
+        Sanctum::actingAs(User::factory()->admin()->create());
+        $this->getJson('/api/manage/overview')->assertJsonPath('stats.competitions', 2);
+    }
+
+    public function test_updating_a_team_syncs_its_players(): void
+    {
+        Sanctum::actingAs(User::factory()->manager()->create());
         $team = $this->postJson('/api/teams', ['name' => 'Lynx', 'players' => [['name' => 'Alice'], ['name' => 'Bob'], ['name' => 'Chloé'], ['name' => 'David']]])->json('data');
 
         $this->putJson("/api/teams/{$team['id']}", [

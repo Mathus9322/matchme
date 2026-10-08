@@ -45,13 +45,16 @@ php artisan migrate:fresh --seed
 Comptes créés par le seeder (mot de passe `password`) :
 
 - `admin@matchme.test` — administrateur
+- `spectateur@matchme.test` — simple utilisateur : pages publiques uniquement
 - `awa@matchme.test` — manager de la « Coupe régionale » (4 équipes, un match en direct)
 - 20 managers, chacun organisateur d'une compétition : `fatou.sarr@matchme.test`, `moussa.ndiaye@matchme.test`, `aminata.fall@matchme.test`… (prénom.nom, sans accents)
-- `capitaine1@matchme.test` à `capitaine12@matchme.test` — utilisateurs simples, capitaines des 48 équipes du vivier
+- `capitaine1@matchme.test` à `capitaine12@matchme.test` — managers des 48 équipes du vivier
 
 Les 21 compétitions couvrent tous les statuts (brouillon, inscriptions ouvertes, en cours, terminée), avec 4 à 8 équipes aux noms sénégalais, des poules A et B pour les plus grandes, des matchs terminés, en direct et programmés.
 
 ## Fonctionnalités
+
+- **Deux espaces** : les **managers et administrateurs** arrivent après connexion dans l'**espace de gestion** (`/gestion` : tableau de bord, compétitions, équipes, matchs amicaux, arbitrage, dossiers documents, administration pour les admins). Un portail **« Vue publique »** leur montre le site comme les visiteurs, avec un bandeau pour revenir. Les **autres utilisateurs** n'ont que les **pages publiques**, en lecture seule (compétitions, classements, matchs en direct, équipes, à propos, profil). Sur la vue publique, aucun outil de gestion n'apparaît ; un manager y voit un lien « Gérer » vers la même page dans son espace.
 
 - **Comptes et rôles** : inscription, connexion par jeton (Sanctum). Trois rôles : `user` (crée des équipes, des matchs amicaux, inscrit son équipe aux compétitions ouvertes), `manager` (crée et gère ses propres compétitions) et `admin` (gère tout). Seul un administrateur peut nommer un manager.
 - **Équipes** : chaque utilisateur crée ses équipes et gère leurs joueurs (4 à 12, ordre modifiable).
@@ -65,6 +68,7 @@ Les 21 compétitions couvrent tous les statuts (brouillon, inscriptions ouvertes
 - **Barème et rubriques** : l'organisateur définit un barème par défaut (valeurs de points, pénalités autorisées ou non) et compose le programme de ses matchs en rubriques (nom, description, barème propre), à partir d'un catalogue de 13 rubriques prédéfinies qu'il peut adapter, ou de rubriques personnalisées. Pendant le direct, l'arbitre choisit la rubrique en cours ; les points hors barème sont refusés et le score est détaillé par rubrique.
 - **Poules** : l'organisateur crée des poules (A, B, C…) une par une ou par tirage au sort équilibré, affecte les équipes, puis génère en un clic les matchs « chacun contre chacun » de chaque poule. Chaque poule a son classement, en plus du classement général. Le tirage est bloqué dès qu'un match de poule a commencé.
 - **Matchs amicaux** (`/amical`) : hors compétition, créés par n'importe quel utilisateur connecté avec des équipes existantes ou des « équipes rapides » (nom + joueurs saisis sur place). Le créateur arbitre le score.
+- **Fiches équipes et joueurs (publiques)** : `/equipes/:id` présente le bilan de l'équipe (matchs, victoires, nuls, défaites, taux de victoire, points marqués et encaissés, forme sur les 5 derniers matchs), son effectif avec les statistiques de chaque joueur (matchs joués, points, moyenne, bonnes réponses, pénalités), le meilleur marqueur, les compétitions, les derniers résultats et les prochains matchs. Un clic sur un joueur ouvre sa fiche : points par rubrique, meilleur match et historique match par match. Un remplaçant resté sur le banc ne compte pas de match joué.
 - **Feuilles de score** : à la fin de chaque match de compétition, une feuille de score virtuelle (instantané figé : équipes, feuille de match, points par joueur et par rubrique, remplacements, déroulé, vainqueur, signatures) est rangée dans le sous-dossier « Résultats » des dossiers documents, et accessible depuis la page du match. Elle s'exporte en PDF (A4) ou en PNG, générés dans le navigateur. `php artisan result-sheets:generate` crée les feuilles manquantes des matchs déjà terminés.
 - **Dossiers documents** : dans chaque compétition, chaque utilisateur dispose d'un dossier privé (`storage/app/private/competitions/{compétition}/users/{utilisateur}`). L'organisateur et les administrateurs voient tous les dossiers. 10 Mo maximum par fichier.
 - **Photos et logos** : chaque utilisateur choisit sa photo de profil (page « Mon profil »), chaque équipe son logo et une photo par joueur (formulaire d'équipe). La page d'un match affiche les logos dans le tableau de score, la photo de chaque joueur et la carte du manager (organisateur de la compétition ou créateur de l'amical). JPG, PNG, WebP ou GIF, 2 Mo maximum ; les fichiers sont supprimés quand l'image, le joueur ou l'équipe est supprimé.
@@ -82,9 +86,11 @@ PHP limite les envois à 2 Mo par défaut. Pour accepter des documents jusqu'à 
 
 ## API
 
-Lecture publique : `GET /api/rubric-presets`, `GET /api/competitions/{id}/result-sheets`, `GET /api/result-sheets/{id}`, `GET /api/competitions`, `/api/competitions/{id}` (avec classement), `/api/teams`, `/api/games?status=live`, `/api/games/{id}`.
+Lecture publique : `GET /api/teams/{id}/stats`, `GET /api/players/{id}/stats`, `GET /api/rubric-presets`, `GET /api/competitions/{id}/result-sheets`, `GET /api/result-sheets/{id}`, `GET /api/competitions`, `/api/competitions/{id}` (avec classement), `/api/teams`, `/api/games?status=live`, `/api/games/{id}`.
 
 Authentifié (`Authorization: Bearer <token>`) : `POST|DELETE /api/auth/me/avatar`, `POST|DELETE /api/teams/{id}/logo`, `POST|DELETE /api/players/{id}/photo`, `GET /api/notifications`, `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all`, `POST /api/teams`, `PUT|DELETE /api/teams/{id}`, `POST /api/competitions`, `PUT|DELETE /api/competitions/{id}`, `POST|DELETE /api/competitions/{id}/teams`, `POST /api/competitions/{id}/games`, `PUT|DELETE /api/games/{id}`, `POST /api/games/{id}/start|finish|events`, `DELETE /api/games/{id}/events/last`, `POST /api/games/friendly`, `PUT /api/games/{id}/lineup`, `POST /api/games/{id}/halftime`, `POST /api/games/{id}/second-half`, `POST /api/games/{id}/substitutions`, `POST /api/games/{id}/swap`, `POST /api/competitions/{id}/publish|finish|reopen`, `PUT /api/competitions/{id}/scoring`, `POST /api/competitions/{id}/rubrics`, `POST /api/competitions/{id}/rubrics/presets`, `PUT|DELETE /api/rubrics/{id}`, `POST /api/rubrics/{id}/move`, `POST /api/competitions/{id}/league/schedule`, `POST /api/competitions/{id}/groups`, `POST /api/competitions/{id}/groups/draw`, `PUT /api/competitions/{id}/teams/{team}/group`, `PUT|DELETE /api/groups/{id}`, `POST /api/groups/{id}/schedule`, `GET|POST /api/competitions/{id}/documents`, `GET /api/documents/{id}/download`, `DELETE /api/documents/{id}`.
+
+Managers et administrateurs : `GET /api/manage/overview`, `POST /api/teams`, `POST /api/games/friendly`, dossiers documents.
 
 Administrateurs : `GET /api/admin/stats`, `GET /api/admin/users`, `PUT|DELETE /api/admin/users/{id}`.
 

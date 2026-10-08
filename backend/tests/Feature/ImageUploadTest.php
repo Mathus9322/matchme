@@ -72,7 +72,7 @@ class ImageUploadTest extends TestCase
 
     public function test_friendly_manager_is_its_creator(): void
     {
-        $user = Sanctum::actingAs(User::factory()->create(['name' => 'Arbitre']));
+        $user = Sanctum::actingAs(User::factory()->manager()->create(['name' => 'Arbitre']));
         $id = $this->postJson('/api/games/friendly', [
             'team_a' => ['name' => 'A', 'players' => ['a1', 'a2', 'a3', 'a4']],
             'team_b' => ['name' => 'B', 'players' => ['b1', 'b2', 'b3', 'b4']],

@@ -2,7 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import {
   AlarmClock, ArrowDown, ArrowLeft, ArrowLeftRight, ArrowRight, ArrowUp, ArrowUpRight, Bell, Camera, Check, Coffee, Dices, Download, FileText, Eye, Flag, Folder,
-  FolderOpen, GripVertical, IconNode, LayoutGrid, Medal, Menu, Pencil, PencilLine, Play, Plus, RotateCcw, Rocket, Shield, Square, Star, TriangleAlert,
+  FolderOpen, GripVertical, IconNode, LogOut, UserRound, LayoutGrid, Medal, Menu, Pencil, PencilLine, Play, Plus, RotateCcw, Rocket, Shield, Square, Star, TriangleAlert,
   Trophy, Undo2, Upload, Users, X, Zap,
 } from 'lucide';
 
@@ -28,6 +28,8 @@ const ICONS = {
   'folder-open': FolderOpen,
   'grip-vertical': GripVertical,
   'layout-grid': LayoutGrid,
+  'log-out': LogOut,
+  'user-round': UserRound,
   medal: Medal,
   menu: Menu,
   pencil: Pencil,

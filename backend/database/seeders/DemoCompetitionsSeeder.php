@@ -74,6 +74,8 @@ class DemoCompetitionsSeeder extends Seeder
             'name' => self::FIRST_NAMES[$n].' '.self::LAST_NAMES[($n * 3) % 20],
             'email' => "capitaine{$n}@matchme.test",
             'password' => 'password',
+            // Les capitaines gèrent leurs équipes : rôle manager (espace de gestion).
+            'role' => User::ROLE_MANAGER,
         ]));
 
         $teams = collect();

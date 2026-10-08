@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasImage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Player extends Model
 {
@@ -20,6 +21,11 @@ class Player extends Model
     protected function imageFolder(): string
     {
         return 'players';
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(ScoreEvent::class);
     }
 
     public function team(): BelongsTo

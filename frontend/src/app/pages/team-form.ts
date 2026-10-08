@@ -69,7 +69,7 @@ interface PlayerForm extends ImageState {
           @if (id()) {
             <button class="btn btn-danger" type="button" style="margin-right: auto" (click)="remove()">Supprimer l’équipe</button>
           }
-          <a class="btn btn-ghost" routerLink="/equipes">Annuler</a>
+          <a class="btn btn-ghost" routerLink="/gestion/equipes">Annuler</a>
           <button class="btn" type="submit" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
         </div>
       </form>
@@ -159,7 +159,7 @@ export class TeamFormPage implements OnInit {
     };
     const id = this.id();
     (id ? this.api.updateTeam(+id, payload) : this.api.createTeam(payload)).pipe(switchMap((team) => this.saveImages(team))).subscribe({
-      next: () => this.router.navigateByUrl('/equipes'),
+      next: () => this.router.navigateByUrl('/gestion/equipes'),
       error: (e) => {
         this.error.set(errorMessage(e));
         this.saving.set(false);
@@ -187,7 +187,7 @@ export class TeamFormPage implements OnInit {
     const id = this.id();
     if (id && confirm('Supprimer cette équipe ? Elle sera retirée de toutes les compétitions.')) {
       this.api.deleteTeam(+id).subscribe({
-        next: () => this.router.navigateByUrl('/equipes'),
+        next: () => this.router.navigateByUrl('/gestion/equipes'),
         error: (e) => this.error.set(errorMessage(e)),
       });
     }

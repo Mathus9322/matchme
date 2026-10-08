@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, EMPTY, switchMap, timer } from 'rxjs';
 import { ApiService } from '../core/api.service';
+import { AuthService } from '../core/auth.service';
 import { AppNotification } from '../core/models';
 import { Icon } from './icon';
 
@@ -63,6 +64,7 @@ import { Icon } from './icon';
 export class NotificationBell {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
   private readonly host = inject(ElementRef<HTMLElement>);
   protected readonly items = signal<AppNotification[]>([]);
   protected readonly unread = signal(0);
@@ -101,7 +103,8 @@ export class NotificationBell {
     }
     this.open.set(false);
     if (n.url) {
-      this.router.navigateByUrl(n.url);
+      // Les managers suivent leurs matchs depuis l'espace de gestion.
+      this.router.navigateByUrl(this.auth.canOrganize() ? '/gestion' + n.url : n.url);
     }
   }
 

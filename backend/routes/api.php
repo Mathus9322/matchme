@@ -9,11 +9,14 @@ use App\Http\Controllers\CompetitionRubricController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\LeagueController;
+use App\Http\Controllers\ManageController;
 use App\Http\Controllers\MatchSheetController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ResultSheetController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TeamStatsController;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureUserIsStaff;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -24,6 +27,8 @@ Route::get('/competitions', [CompetitionController::class, 'index']);
 Route::get('/competitions/{competition}', [CompetitionController::class, 'show']);
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{team}', [TeamController::class, 'show']);
+Route::get('/teams/{team}/stats', [TeamStatsController::class, 'team']);
+Route::get('/players/{player}/stats', [TeamStatsController::class, 'player']);
 Route::get('/games', [GameController::class, 'index']);
 Route::get('/rubric-presets', [CompetitionRubricController::class, 'presets']);
 Route::get('/competitions/{competition}/result-sheets', [ResultSheetController::class, 'index']);
@@ -43,7 +48,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/players/{player}/photo', [ImageController::class, 'storePlayerPhoto']);
     Route::delete('/players/{player}/photo', [ImageController::class, 'destroyPlayerPhoto']);
 
-    Route::post('/teams', [TeamController::class, 'store']);
     Route::put('/teams/{team}', [TeamController::class, 'update']);
     Route::delete('/teams/{team}', [TeamController::class, 'destroy']);
 
@@ -73,12 +77,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/groups/{group}', [CompetitionGroupController::class, 'destroy']);
     Route::post('/groups/{group}/schedule', [CompetitionGroupController::class, 'schedule']);
 
-    Route::get('/competitions/{competition}/documents', [CompetitionDocumentController::class, 'index']);
-    Route::post('/competitions/{competition}/documents', [CompetitionDocumentController::class, 'store']);
-    Route::get('/documents/{document}/download', [CompetitionDocumentController::class, 'download']);
-    Route::delete('/documents/{document}', [CompetitionDocumentController::class, 'destroy']);
-
-    Route::post('/games/friendly', [GameController::class, 'storeFriendly']);
     Route::put('/games/{game}', [GameController::class, 'update']);
     Route::delete('/games/{game}', [GameController::class, 'destroy']);
     Route::post('/games/{game}/start', [GameController::class, 'start']);
@@ -90,6 +88,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/games/{game}/second-half', [MatchSheetController::class, 'secondHalf']);
     Route::post('/games/{game}/substitutions', [MatchSheetController::class, 'substitute']);
     Route::post('/games/{game}/swap', [MatchSheetController::class, 'swap']);
+
+    // Espace de gestion : managers et administrateurs.
+    Route::middleware(EnsureUserIsStaff::class)->group(function () {
+        Route::get('/manage/overview', [ManageController::class, 'overview']);
+        Route::post('/teams', [TeamController::class, 'store']);
+        Route::post('/games/friendly', [GameController::class, 'storeFriendly']);
+        Route::get('/competitions/{competition}/documents', [CompetitionDocumentController::class, 'index']);
+        Route::post('/competitions/{competition}/documents', [CompetitionDocumentController::class, 'store']);
+        Route::get('/documents/{document}/download', [CompetitionDocumentController::class, 'download']);
+        Route::delete('/documents/{document}', [CompetitionDocumentController::class, 'destroy']);
+    });
 
     Route::middleware(EnsureUserIsAdmin::class)->prefix('admin')->group(function () {
         Route::get('/stats', [AdminController::class, 'stats']);

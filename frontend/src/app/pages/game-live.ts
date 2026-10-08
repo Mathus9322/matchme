@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { catchError, EMPTY, Observable, switchMap, timer } from 'rxjs';
 import { ApiService, errorMessage } from '../core/api.service';
 import { Game, GAME_STATUS_LABELS, GamePlayer, GameSide, MAX_SUBSTITUTES, PHASE_LABELS, scaleValues, STARTERS } from '../core/models';
+import { AreaService } from '../core/area.service';
 import { Modal } from '../shared/modal';
 import { ScoreSheetModal } from '../shared/score-sheet-modal';
 import { Avatar } from '../shared/avatar';
@@ -20,8 +21,8 @@ import { Icon } from '../shared/icon';
           <p class="eyebrow">
             @if (g.status === 'live') { <span class="live-dot"></span> }
             {{ labels[g.status] }}@if (g.status === 'live' && g.phase) { · <span class="phase">{{ phases[g.phase] }}</span> }
-            @if (g.competition) { · <a [routerLink]="['/competitions', g.competition.id]">{{ g.competition.name }}</a> }
-            @else { · <a routerLink="/amical">Match amical</a> }
+            @if (g.competition) { · <a [routerLink]="area.link('competitions', g.competition.id)">{{ g.competition.name }}</a> }
+            @else { · Match amical }
             @if (g.round) { · {{ g.round }} }
           </p>
           <h1 class="page-title">{{ g.team_a.name }} <em>vs</em> {{ g.team_b.name }}</h1>
@@ -33,6 +34,12 @@ import { Icon } from '../shared/icon';
             </div>
           }
         </div>
+        @if (!area.inManage() && manageable()) {
+          <a class="btn" [routerLink]="area.manage('matchs', g.id)"><app-icon name="pencil" /> {{ g.status === 'finished' ? 'Gérer ce match' : 'Arbitrer ce match' }}</a>
+        }
+        @if (area.inManage()) {
+          <a class="btn btn-ghost" [routerLink]="area.public('matchs', g.id)"><app-icon name="eye" /> Vue publique</a>
+        }
         @if (g.result_sheet_id) {
           <button class="btn btn-gold" type="button" (click)="sheetOpen.set(g.result_sheet_id)"><app-icon name="file-text" /> Feuille de score</button>
         }
@@ -107,7 +114,7 @@ import { Icon } from '../shared/icon';
             <header class="card-head">
               <div class="row" style="flex-wrap: nowrap; min-width: 0">
                 <app-avatar [src]="side.logo_url" [name]="side.name" [size]="40" shape="square" [label]="'Logo ' + side.name" />
-                <div style="min-width: 0"><span class="team-index">{{ b ? 'B' : 'A' }}</span> <h2 class="section-title card-title">{{ side.name }}</h2></div>
+                <div style="min-width: 0"><span class="team-index">{{ b ? 'B' : 'A' }}</span> <h2 class="section-title card-title"><a class="team-link" [routerLink]="area.link('equipes', side.id)">{{ side.name }}</a></h2></div>
               </div>
               <strong class="team-total">{{ side.score }}</strong>
             </header>
@@ -262,6 +269,8 @@ import { Icon } from '../shared/icon';
     .side-team { display: flex; align-items: center; gap: 14px; min-width: 0; }
     .side-team .logo { box-shadow: 0 0 0 3px rgba(240, 205, 135, .35); }
     .manager { display: inline-flex; align-items: center; gap: 12px; margin-top: 14px; padding: 8px 16px 8px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13px; line-height: 1.3; }
+    .team-link { color: inherit; text-decoration: none; }
+    .team-link:hover { color: var(--rust); text-decoration: underline; }
     .card-title { display: inline; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .side strong { font-family: var(--display); font-size: clamp(44px, 8vw, 72px); line-height: 1; font-variant-numeric: tabular-nums; }
     .side-a strong { color: var(--gold); }
@@ -354,6 +363,8 @@ export class GameLivePage implements OnInit {
   readonly id = input.required<string>();
   protected readonly labels = GAME_STATUS_LABELS;
   protected readonly phases = PHASE_LABELS;
+  protected readonly area = inject(AreaService);
+  protected readonly manageable = signal(false);
   protected readonly sheetOpen = signal<number | null>(null);
   /** Rubrique choisie par l'utilisateur ; à défaut, la première du programme. */
   protected readonly rubricId = signal<number | null>(null);
@@ -390,7 +401,7 @@ export class GameLivePage implements OnInit {
       )
       .subscribe((game) => {
         if (!this.busy()) {
-          this.game.set(game);
+          this.setGame(game);
         }
       });
   }
@@ -398,6 +409,15 @@ export class GameLivePage implements OnInit {
   protected rubricScore(side: GameSide, rubricId: number): number {
     const scores = side.rubric_scores;
     return scores && !Array.isArray(scores) ? (scores[rubricId] ?? 0) : 0;
+  }
+
+  /** Vue publique : lecture seule ; l'arbitrage se fait depuis l'espace de gestion. */
+  private setGame(game: Game): void {
+    this.manageable.set(!!game.can_manage || !!game.team_a.can_manage_team || !!game.team_b.can_manage_team);
+    if (!this.area.inManage()) {
+      game = { ...game, can_manage: false, team_a: { ...game.team_a, can_manage_team: false }, team_b: { ...game.team_b, can_manage_team: false } };
+    }
+    this.game.set(game);
   }
 
   protected canScore(game: Game): boolean {
@@ -549,7 +569,7 @@ export class GameLivePage implements OnInit {
     this.busy.set(true);
     this.api.saveLineup(game.id, side.id, ids('starter'), ids('substitute')).subscribe({
       next: (updated) => {
-        this.game.set(updated);
+        this.setGame(updated);
         this.busy.set(false);
         this.lineupSide.set(null);
       },
@@ -575,7 +595,7 @@ export class GameLivePage implements OnInit {
     this.error.set('');
     request.subscribe({
       next: (game) => {
-        this.game.set(game);
+        this.setGame(game);
         this.busy.set(false);
       },
       error: (e) => {

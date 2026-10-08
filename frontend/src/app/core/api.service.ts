@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
-import { AppNotification, Competition, ResultSheet, ResultSheetSummary, CompetitionFormat, CompetitionStatus, Rubric, Scale, DocumentFolder, Game, GameStatus, Group, GroupStanding, PlayerRef, Stats, Standing, Team, User } from './models';
+import { AppNotification, Competition, PlayerStats, TeamStats, ResultSheet, ResultSheetSummary, CompetitionFormat, CompetitionStatus, Rubric, Scale, DocumentFolder, Game, GameStatus, Group, GroupStanding, PlayerRef, Stats, Standing, Team, User } from './models';
 
 interface Data<T> {
   data: T;
@@ -138,6 +138,11 @@ export class ApiService {
     return this.http.delete<Data<PlayerRef>>(`/api/players/${playerId}/photo`).pipe(map((r) => r.data));
   }
 
+  // Espace de gestion
+  manageOverview() {
+    return this.http.get<unknown>('/api/manage/overview');
+  }
+
   // Notifications
   notifications() {
     return this.http.get<{ data: AppNotification[]; unread_count: number }>('/api/notifications');
@@ -227,6 +232,12 @@ export class ApiService {
   }
   team(id: number) {
     return this.get<Team>(`/api/teams/${id}`);
+  }
+  teamStats(id: number) {
+    return this.get<TeamStats>(`/api/teams/${id}/stats`);
+  }
+  playerStats(id: number) {
+    return this.get<PlayerStats>(`/api/players/${id}/stats`);
   }
   createTeam(payload: TeamPayload) {
     return this.http.post<Data<Team>>('/api/teams', payload).pipe(map((r) => r.data));

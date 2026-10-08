@@ -12,6 +12,7 @@ import { CompetitionGroups } from '../shared/competition-groups';
 import { CompetitionRubrics } from '../shared/competition-rubrics';
 import { LeagueSchedule } from '../shared/league-schedule';
 import { Avatar } from '../shared/avatar';
+import { AreaService } from '../core/area.service';
 import { Modal } from '../shared/modal';
 import { TeamPickerModal } from '../shared/team-picker-modal';
 import { GameRow } from '../shared/game-row';
@@ -37,11 +38,13 @@ type Tab = (typeof TABS)[number];
             <p class="row muted small" style="margin-top: 10px"><app-avatar [src]="o.avatar_url" [name]="o.name" [size]="28" /> Organisée par <strong style="color: var(--ink)">{{ o.name }}</strong></p>
           }
         </div>
-        @if (auth.isLoggedIn() || c.can_manage) {
+        @if (!area.inManage() && manageable()) {
+          <a class="btn" [routerLink]="area.manage('competitions', c.id)"><app-icon name="pencil" /> Gérer cette compétition</a>
+        }
+        @if (area.inManage()) {
           <div class="row">
-            @if (auth.isLoggedIn()) {
-              <a class="btn btn-gold" [routerLink]="['/competitions', c.id, 'documents']"><app-icon name="folder" /> {{ c.can_manage ? 'Dossiers documents' : 'Mon dossier documents' }}</a>
-            }
+            <a class="btn btn-ghost" [routerLink]="area.public('competitions', c.id)" title="Voir comme le public"><app-icon name="eye" /> Vue publique</a>
+            <a class="btn btn-gold" [routerLink]="area.manage('competitions', c.id, 'documents')"><app-icon name="folder" /> {{ c.can_manage ? 'Dossiers documents' : 'Mon dossier documents' }}</a>
             @if (c.can_manage) {
               @if (c.status === 'draft' || c.status === 'open') {
                 <button class="btn" type="button" (click)="openLifecycle('publish')"><app-icon name="rocket" /> Publier la compétition</button>
@@ -145,7 +148,7 @@ type Tab = (typeof TABS)[number];
                 <article class="card team-card">
                   <div class="row" style="flex-wrap: nowrap">
                     <app-avatar [src]="t.logo_url" [name]="t.name" [size]="44" shape="square" />
-                    <h3 style="flex: 1; min-width: 0">{{ t.name }}</h3>
+                    <h3 style="flex: 1; min-width: 0"><a class="team-link" [routerLink]="area.link('equipes', t.id)">{{ t.name }}</a></h3>
                     @if (groupName(c, t.group_id ?? null); as name) { <span class="badge">{{ name }}</span> }
                   </div>
                   <p class="meta">{{ t.players_count }} joueurs{{ t.city ? ' · ' + t.city : '' }}</p>
@@ -267,7 +270,7 @@ type Tab = (typeof TABS)[number];
                   <td>
                     <span class="team-cell">
                       <app-avatar [src]="s.team.logo_url" [name]="s.team.name" [size]="26" shape="square" />
-                      <strong>{{ s.team.name }}</strong>
+                      <a class="team-link" [routerLink]="area.link('equipes', s.team.id)"><strong>{{ s.team.name }}</strong></a>
                     </span>
                   </td>
                   <td class="num">{{ s.played }}</td><td class="num">{{ s.won }}</td><td class="num">{{ s.drawn }}</td><td class="num">{{ s.lost }}</td>
@@ -402,6 +405,8 @@ type Tab = (typeof TABS)[number];
     .team-card h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .group-select { flex: 1; min-height: 32px; padding: 3px 8px; font-size: 12px; }
     .group-tables { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-top: 24px; }
+    .team-link { color: inherit; text-decoration: none; }
+    .team-link:hover { color: var(--rust); text-decoration: underline; }
     .standings th, .standings td { white-space: nowrap; }
     .standings .rank { width: 44px; text-align: center; }
     .standings .team-cell { display: inline-flex; align-items: center; gap: 10px; min-width: 0; white-space: normal; }
@@ -461,6 +466,9 @@ export class CompetitionDetailPage implements OnInit {
       .sort((a, b) => (b.finished_at ?? '').localeCompare(a.finished_at ?? '')),
   );
   protected readonly isFiltered = computed(() => this.gameFilter() !== 'all' || !!this.roundFilter());
+  protected readonly area = inject(AreaService);
+  /** L'utilisateur gère-t-il cette compétition (même si la vue publique est en lecture seule) ? */
+  protected readonly manageable = signal(false);
   protected readonly gameFormOpen = signal(false);
   protected readonly lifecycle = signal<'publish' | 'finish' | null>(null);
   protected readonly lifecycleError = signal('');
@@ -631,7 +639,7 @@ export class CompetitionDetailPage implements OnInit {
   protected remove(): void {
     if (confirm('Supprimer définitivement cette compétition et tous ses matchs ?')) {
       this.api.deleteCompetition(+this.id()).subscribe({
-        next: () => this.router.navigateByUrl('/competitions'),
+        next: () => this.router.navigate(this.area.link('competitions')),
         error: (e) => this.error.set(errorMessage(e)),
       });
     }
@@ -657,12 +665,18 @@ export class CompetitionDetailPage implements OnInit {
   protected load(): void {
     this.api.competition(+this.id()).subscribe({
       next: ({ competition, standings, groupStandings }) => {
-        this.competition.set(competition);
+        // Vue publique : lecture seule, même pour l'organisateur (il gère depuis l'espace de gestion).
+        this.manageable.set(competition.can_manage);
+        this.competition.set(this.area.inManage() ? competition : this.readOnly(competition));
         this.standings.set(standings);
         this.groupStandings.set(groupStandings);
       },
       error: () => this.notFound.set(true),
     });
+  }
+
+  private readOnly(c: Competition): Competition {
+    return { ...c, can_manage: false, teams: c.teams?.map((t) => ({ ...t, can_manage: false })) };
   }
 
   private emptyGame() {

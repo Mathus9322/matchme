@@ -13,7 +13,7 @@ class FriendlyGameTest extends TestCase
 
     public function test_a_user_can_create_and_score_a_friendly_with_quick_teams(): void
     {
-        $user = Sanctum::actingAs(User::factory()->create());
+        $user = Sanctum::actingAs(User::factory()->manager()->create());
         $existing = $this->teamWithPlayers(User::factory()->create()->id, 'Les Comètes');
 
         $game = $this->postJson('/api/games/friendly', [
@@ -40,7 +40,7 @@ class FriendlyGameTest extends TestCase
 
     public function test_only_the_creator_or_an_admin_can_manage_a_friendly(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->manager()->create());
         $id = $this->postJson('/api/games/friendly', [
             'team_a' => ['name' => 'A', 'players' => ['a1', 'a2', 'a3', 'a4']],
             'team_b' => ['name' => 'B', 'players' => ['b1', 'b2', 'b3', 'b4']],
@@ -54,9 +54,18 @@ class FriendlyGameTest extends TestCase
         $this->postJson("/api/games/{$id}/start")->assertOk();
     }
 
-    public function test_quick_teams_require_a_name_and_players(): void
+    public function test_regular_users_cannot_create_friendlies(): void
     {
         Sanctum::actingAs(User::factory()->create());
+        $this->postJson('/api/games/friendly', [
+            'team_a' => ['name' => 'A', 'players' => ['a1', 'a2', 'a3', 'a4']],
+            'team_b' => ['name' => 'B', 'players' => ['b1', 'b2', 'b3', 'b4']],
+        ])->assertForbidden();
+    }
+
+    public function test_quick_teams_require_a_name_and_players(): void
+    {
+        Sanctum::actingAs(User::factory()->manager()->create());
         $this->postJson('/api/games/friendly', ['team_a' => ['name' => 'A'], 'team_b' => ['players' => ['b']]])
             ->assertJsonValidationErrors(['team_a.players', 'team_b.name']);
     }

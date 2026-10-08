@@ -35,7 +35,9 @@ h1, h2, h3 { margin: 0; }
 
 /* Coquille */
 .shell {
-  width: min(1160px, calc(100% - 48px));
+  /* Pleine largeur : seules des marges latérales proportionnelles à l'écran. */
+  width: 100%;
+  padding-inline: clamp(16px, 3vw, 56px);
   min-height: 100vh;
   margin: 0 auto;
   display: flex;
@@ -119,7 +121,7 @@ h1, h2, h3 { margin: 0; }
 .alert { padding: 11px 14px; border-radius: 8px; background: rgba(163, 54, 31, .08); color: var(--danger); font-size: 13px; }
 .alert-ok { background: rgba(240, 205, 135, .45); color: var(--ink); }
 .narrow { max-width: 460px; margin: 0 auto; }
-.medium { max-width: 720px; }
+.medium { max-width: 960px; }
 
 /* Tableaux */
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
@@ -156,7 +158,7 @@ td .input { min-height: 34px; padding: 5px 9px; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(172, 99, 39, 0); } }
 
 @media (max-width: 820px) {
-  .shell { width: calc(100% - 32px); }
+  .shell { padding-inline: 16px; }
   .topbar { position: relative; flex-wrap: wrap; gap: 10px; min-height: 64px; }
   .menu-toggle { display: block; }
   .nav { display: none; position: absolute; top: 64px; left: 0; right: 0; z-index: 10; flex-direction: column; align-items: stretch; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 30px rgba(43, 34, 25, .12); }
@@ -189,7 +191,7 @@ td .input { min-height: 34px; padding: 5px 9px; }
 
 /* Fenêtres modales */
 .modal { width: min(560px, calc(100% - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 0; border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 80px -20px rgba(43, 34, 25, .45); }
-.modal-wide { width: min(760px, calc(100% - 32px)); }
+.modal-wide { width: min(980px, calc(100% - 32px)); }
 .modal[open] { animation: modal-in .25s cubic-bezier(.2, .7, .2, 1); }
 .modal::backdrop { background: rgba(43, 34, 25, .55); backdrop-filter: blur(3px); }
 .modal[open]::backdrop { animation: fade-in .25s ease; }
@@ -210,3 +212,9 @@ td .input { min-height: 34px; padding: 5px 9px; }
 .format-picker label.active { border-color: var(--ochre); background: rgba(240, 205, 135, .35); }
 .format-picker input { margin-top: 3px; accent-color: var(--rust); }
 @media (max-width: 520px) { .format-picker { grid-template-columns: 1fr; } }
+
+/* Portail : bandeau affiché aux managers et admins sur la vue publique */
+.portal-bar { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 18px; padding: 8px 16px; background: var(--ink); color: var(--paper); font-size: 12px; }
+.portal-bar span { display: inline-flex; align-items: center; gap: 6px; }
+.portal-bar a { display: inline-flex; align-items: center; gap: 6px; color: var(--gold); font-weight: 700; text-decoration: none; }
+.portal-bar a:hover { color: var(--gold-light); }

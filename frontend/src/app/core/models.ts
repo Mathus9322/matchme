@@ -216,6 +216,46 @@ export interface ResultSheet {
   generated_at: string;
 }
 
+export interface PlayerTotals {
+  appearances: number;
+  points: number;
+  average: number;
+  answers: number;
+  penalties: number;
+}
+
+export interface TeamStats {
+  team: { id: number; name: string; city: string | null; logo_url: string | null; owner: Owner | null; competitions: { id: number; name: string; status: CompetitionStatus }[] };
+  record: { played: number; won: number; drawn: number; lost: number; points_for: number; points_against: number; win_rate: number; average_for: number; average_against: number };
+  form: ('V' | 'N' | 'D')[];
+  players: ({ id: number; name: string; photo_url: string | null } & PlayerTotals)[];
+  top_scorer: ({ id: number; name: string; photo_url: string | null } & PlayerTotals) | null;
+  recent: Game[];
+  upcoming: Game[];
+}
+
+export interface PlayerMatch {
+  game_id: number;
+  date: string | null;
+  competition: string;
+  round: string | null;
+  opponent: string | null;
+  score: string;
+  result: 'V' | 'N' | 'D';
+  role: 'starter' | 'substitute' | null;
+  points: number;
+  answers: number;
+  penalties: number;
+}
+
+export interface PlayerStats extends PlayerTotals {
+  player: { id: number; name: string; photo_url: string | null };
+  team: { id: number; name: string; logo_url: string | null };
+  best: PlayerMatch | null;
+  rubrics: { name: string; points: number; answers: number }[];
+  matches: PlayerMatch[];
+}
+
 export const ROLE_LABELS: Record<Role, string> = {
   user: 'Utilisateur',
   manager: 'Manager',

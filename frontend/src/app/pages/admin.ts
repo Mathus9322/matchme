@@ -94,7 +94,7 @@ interface EditableUser extends User {
             <tbody>
               @for (c of competitions(); track c.id) {
                 <tr>
-                  <td><a [routerLink]="['/competitions', c.id]"><strong>{{ c.name }}</strong></a></td>
+                  <td><a [routerLink]="['/gestion/competitions', c.id]"><strong>{{ c.name }}</strong></a></td>
                   <td>{{ c.owner?.name }}</td>
                   <td>
                     <select class="input" [ngModel]="c.status" (ngModelChange)="setCompetitionStatus(c, $event)" [name]="'cs' + c.id" aria-label="Statut">
@@ -105,7 +105,7 @@ interface EditableUser extends User {
                   <td class="num">{{ c.games_count }}</td>
                   <td>
                     <div class="row" style="flex-wrap: nowrap">
-                      <a class="btn btn-ghost btn-sm" [routerLink]="['/competitions', c.id, 'modifier']">Modifier</a>
+                      <a class="btn btn-ghost btn-sm" [routerLink]="['/gestion/competitions', c.id]" [queryParams]="{ modifier: 1 }">Modifier</a>
                       <button class="btn btn-danger btn-sm" type="button" (click)="confirmRun('Supprimer « ' + c.name + ' » ?', api.deleteCompetition(c.id), 'Compétition supprimée.')">Supprimer</button>
                     </div>
                   </td>
@@ -129,7 +129,7 @@ interface EditableUser extends User {
                   <td class="num">{{ t.players_count }}</td>
                   <td>
                     <div class="row" style="flex-wrap: nowrap">
-                      <a class="btn btn-ghost btn-sm" [routerLink]="['/equipes', t.id, 'modifier']">Joueurs</a>
+                      <a class="btn btn-ghost btn-sm" [routerLink]="['/gestion/equipes', t.id, 'modifier']">Joueurs</a>
                       <button class="btn btn-danger btn-sm" type="button" (click)="confirmRun('Supprimer l’équipe ' + t.name + ' ?', api.deleteTeam(t.id), 'Équipe supprimée.')">Supprimer</button>
                     </div>
                   </td>
@@ -147,7 +147,7 @@ interface EditableUser extends User {
             <tbody>
               @for (g of games(); track g.id) {
                 <tr>
-                  <td><a [routerLink]="['/matchs', g.id]"><strong>{{ g.team_a.name }} – {{ g.team_b.name }}</strong></a><br /><span class="small muted">{{ g.round }}</span></td>
+                  <td><a [routerLink]="['/gestion/matchs', g.id]"><strong>{{ g.team_a.name }} – {{ g.team_b.name }}</strong></a><br /><span class="small muted">{{ g.round }}</span></td>
                   <td>{{ g.competition?.name ?? 'Match amical' }}</td>
                   <td class="small">{{ g.scheduled_at | date: 'd MMM y, HH:mm' }}</td>
                   <td class="num">{{ g.team_a.score }} – {{ g.team_b.score }}</td>
