@@ -17,11 +17,23 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # Fichiers Angular versionnés : mis en cache longtemps.
-    location ~* \.(?:js|css|woff2?|png|jpe?g|svg|ico|webp)$ {
+    # Fichiers Angular (nom avec empreinte, changé à chaque build) : mis en cache longtemps.
+    location ~* \.(?:js|css|woff2?)$ {
         try_files $uri =404;
         expires 30d;
         access_log off;
+    }
+
+    # Icônes et images de public/ : même nom d'une version à l'autre, cache court.
+    location ~* \.(?:png|jpe?g|svg|ico|webp)$ {
+        try_files $uri =404;
+        expires 1h;
+        access_log off;
+    }
+
+    # La page d'accueil n'est jamais gardée en cache : elle pointe vers les fichiers du dernier build.
+    location = /index.html {
+        add_header Cache-Control "no-cache";
     }
 
     # API Laravel et contrôle de santé.
