@@ -1,83 +1,57 @@
-import { HttpClient } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-
-interface Player {
-  name: string;
-  score: number;
-}
-
-interface Team {
-  name: string;
-  players: Player[];
-  bonus: number;
-}
-
-interface MatchResponse {
-  data: { id: number };
-}
+import { Component, inject, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from './core/auth.service';
+import { ROLE_LABELS } from './core/models';
+import { Avatar } from './shared/avatar';
+import { NotificationBell } from './shared/notification-bell';
+import { Icon } from './shared/icon';
 
 @Component({
-  imports: [FormsModule],
   selector: 'app-root',
-  styleUrl: './app.css',
-  templateUrl: './matchme.html',
+  imports: [Icon, RouterOutlet, RouterLink, RouterLinkActive, Avatar, NotificationBell],
+  template: `
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" routerLink="/" aria-label="MatchMe, accueil">match<span>me</span><i>.</i></a>
+        <button class="menu-toggle" type="button" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-label="Menu"><app-icon name="menu" [size]="20" /></button>
+        <nav class="nav" [class.open]="menuOpen()" (click)="menuOpen.set(false)">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Direct</a>
+          <a routerLink="/competitions" routerLinkActive="active">Compétitions</a>
+          <a routerLink="/amical" routerLinkActive="active">Match amical</a>
+          <a routerLink="/equipes" routerLinkActive="active">Équipes</a>
+          <a routerLink="/a-propos" routerLinkActive="active">À propos</a>
+          @if (auth.isAdmin()) {
+            <a routerLink="/admin" routerLinkActive="active">Admin</a>
+          }
+          <span class="nav-spacer"></span>
+          @if (auth.user(); as user) {
+            <app-notification-bell />
+            <a class="nav-user" routerLink="/profil" [title]="'Mon profil · ' + user.email">
+              <app-avatar [src]="user.avatar_url" [name]="user.name" [size]="30" />
+              <span>{{ user.name }}</span>
+            </a>
+            @if (user.role !== 'user') { <span class="badge" [class.badge-admin]="user.role === 'admin'" [class.badge-ongoing]="user.role === 'manager'">{{ roleLabels[user.role] }}</span> }
+            <button class="btn btn-ghost btn-sm" type="button" (click)="auth.logout()">Déconnexion</button>
+          } @else {
+            <a routerLink="/connexion" routerLinkActive="active">Connexion</a>
+            <a class="btn btn-sm" routerLink="/inscription">Créer un compte</a>
+          }
+        </nav>
+      </header>
+
+      <main class="content">
+        <router-outlet />
+      </main>
+
+      <footer class="page-footer">
+        <span>MATCHME <i>·</i> LE PLAISIR DU JEU, LE SUIVI DU SCORE.</span>
+        <span><a routerLink="/a-propos">À PROPOS</a>&nbsp;<i>·</i>&nbsp;FAIT POUR LES ESPRITS VIFS.</span>
+      </footer>
+    </div>
+  `,
 })
 export class App {
-  private readonly http = inject(HttpClient);
-  protected readonly increments = [10, 20, 30, 40, -10, -20, -30, -40];
-  protected readonly Math = Math;
-  protected teamA: Team = this.createTeam();
-  protected teamB: Team = this.createTeam();
-  protected started = false;
-  protected saving = false;
-  protected matchId: number | null = null;
-  protected errorMessage = '';
-
-  protected createMatch(): void {
-    this.saving = true;
-    this.errorMessage = '';
-    this.http.post<MatchResponse>('/api/matches', {
-      team_a: { name: this.teamA.name.trim(), players: this.teamA.players.map(({ name }) => name.trim()) },
-      team_b: { name: this.teamB.name.trim(), players: this.teamB.players.map(({ name }) => name.trim()) },
-    }).subscribe({
-      next: ({ data }) => {
-        this.matchId = data.id;
-        this.started = true;
-        this.saving = false;
-      },
-      error: () => {
-        this.errorMessage = 'Impossible de créer le match. Vérifiez que l’API Laravel est démarrée.';
-        this.saving = false;
-      },
-    });
-  }
-
-  protected teamScore(team: Team): number {
-    return team.players.reduce((total, player) => total + player.score, team.bonus);
-  }
-
-  protected changePlayerScore(player: Player, team: Team, points: number): void {
-    player.score += points;
-    team.players = [...team.players];
-  }
-
-  protected changeTeamScore(team: Team, points: number): void {
-    team.bonus += points;
-  }
-
-  protected resetMatch(): void {
-    this.teamA = this.createTeam();
-    this.teamB = this.createTeam();
-    this.matchId = null;
-    this.started = false;
-  }
-
-  private createTeam(): Team {
-    return {
-      name: '',
-      players: Array.from({ length: 4 }, () => ({ name: '', score: 0 })),
-      bonus: 0,
-    };
-  }
+  protected readonly auth = inject(AuthService);
+  protected readonly menuOpen = signal(false);
+  protected readonly roleLabels = ROLE_LABELS;
 }

@@ -33,6 +33,16 @@ class UserFactory extends Factory
         ];
     }
 
+    public function manager(): static
+    {
+        return $this->state(fn () => ['role' => User::ROLE_MANAGER]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn () => ['role' => User::ROLE_ADMIN]);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */
