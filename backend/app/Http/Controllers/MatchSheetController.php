@@ -8,6 +8,7 @@ use App\Models\GamePlayer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /** Feuille de match, mi-temps et remplacements. */
 class MatchSheetController extends Controller
@@ -33,6 +34,13 @@ class MatchSheetController extends Controller
             'starters.*.exists' => 'Ce joueur n’appartient pas à l’équipe.',
             'substitutes.*.exists' => 'Ce joueur n’appartient pas à l’équipe.',
         ]);
+
+        $team = $teamId === $game->team_a_id ? $game->teamA : $game->teamB;
+        $captain = $team->load('players')->captainId();
+        if ($captain !== null && ! in_array($captain, $validated['starters'], true)) {
+            throw ValidationException::withMessages(['starters' => 'Le capitaine doit être titulaire : il joue toujours en première position.']);
+        }
+        $validated['starters'] = $team->captainFirst($validated['starters']);
 
         DB::transaction(function () use ($game, $validated) {
             $game->sheet()->where('team_id', $validated['team_id'])->delete();
@@ -89,6 +97,7 @@ class MatchSheetController extends Controller
         $in = $sheet->get($validated['player_in_id']);
         abort_unless($out?->on_field, 422, 'Le joueur remplacé doit être sur le terrain.');
         abort_unless($in && ! $in->on_field, 422, 'Le joueur entrant doit être sur le banc.');
+        abort_if($this->isCaptain($game, $teamId, $out->player_id), 422, 'Le capitaine reste sur le terrain, en première position : il ne peut pas être remplacé.');
 
         DB::transaction(function () use ($game, $out, $in, $validated, $request) {
             // L'entrant prend la place du sortant sur la feuille.
@@ -102,12 +111,13 @@ class MatchSheetController extends Controller
         return $this->detailed($game);
     }
 
-    /** Échange la position de deux joueurs du même groupe (terrain ou banc). */
+    /** Échange la position de deux joueurs du même groupe (terrain ou banc) : avant le coup d'envoi ou pendant la mi-temps. */
     public function swap(Request $request, Game $game): GameResource
     {
         $teamId = (int) $request->input('team_id');
         abort_unless($game->canManageTeam($request->user(), $teamId), 403, 'Vous ne pouvez pas modifier cette équipe.');
         abort_if($game->status === Game::STATUS_FINISHED, 422, 'Le match est terminé.');
+        abort_if($game->status === Game::STATUS_LIVE && $game->phase !== Game::PHASE_HALFTIME, 422, 'Aucun changement pendant le jeu : attendez la mi-temps.');
 
         $validated = $request->validate([
             'team_id' => ['required', 'integer', Rule::in([$game->team_a_id, $game->team_b_id])],
@@ -123,6 +133,7 @@ class MatchSheetController extends Controller
         $b = $sheet->get($validated['player_b_id']);
         abort_unless($a && $b, 422, 'Ces joueurs ne sont pas sur la feuille de match.');
         abort_unless($a->on_field === $b->on_field, 422, 'Pour faire entrer un remplaçant, utilisez un remplacement (à la mi-temps).');
+        abort_if($a->on_field && ($this->isCaptain($game, $teamId, $a->player_id) || $this->isCaptain($game, $teamId, $b->player_id)), 422, 'Le capitaine occupe toujours la première position sur le terrain.');
 
         DB::transaction(function () use ($a, $b, $game) {
             [$positionA, $positionB] = [$a->position, $b->position];
@@ -134,6 +145,13 @@ class MatchSheetController extends Controller
         return $this->detailed($game);
     }
 
+    private function isCaptain(Game $game, int $teamId, int $playerId): bool
+    {
+        $team = $teamId === $game->team_a_id ? $game->teamA : $game->teamB;
+
+        return $team->players()->whereKey($playerId)->where('is_captain', true)->exists();
+    }
+
     private function authorizeGame(Request $request, Game $game): void
     {
         abort_unless($game->isManagedBy($request->user()), 403, 'Vous ne gérez pas ce match.');
@@ -141,7 +159,7 @@ class MatchSheetController extends Controller
 
     private function detailed(Game $game): GameResource
     {
-        $game->load(['competition.rubrics', 'competition.owner', 'group', 'owner', 'teamA.players', 'teamB.players', 'events.player', 'events.rubric', 'sheet', 'resultSheet', 'substitutions.playerIn', 'substitutions.playerOut']);
+        $game->load(GameResource::DETAIL_RELATIONS);
 
         return (new GameResource($game))->detailed();
     }

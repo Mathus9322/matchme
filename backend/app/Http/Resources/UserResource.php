@@ -18,6 +18,7 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'avatar_url' => $this->imageUrl(),
             'can_organize' => $this->canOrganize(),
+            'is_coach' => $this->isCoach(),
             'teams_count' => $this->whenCounted('teams'),
             'competitions_count' => $this->whenCounted('competitions'),
             'created_at' => $this->created_at,

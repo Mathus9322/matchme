@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Buzzer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,12 +31,13 @@ class Game extends Model
 
     protected $attributes = ['status' => self::STATUS_SCHEDULED];
 
-    protected $fillable = ['competition_id', 'group_id', 'owner_id', 'team_a_id', 'team_b_id', 'round', 'scheduled_at', 'status', 'phase', 'started_at', 'finished_at', 'reminder_sent_at'];
+    protected $fillable = ['competition_id', 'group_id', 'owner_id', 'team_a_id', 'team_b_id', 'round', 'scheduled_at', 'status', 'phase', 'current_question_id', 'current_rubric_id', 'uses_buzzer', 'questions_source', 'started_at', 'finished_at', 'reminder_sent_at'];
 
     protected function casts(): array
     {
         return [
             'scheduled_at' => 'datetime',
+            'uses_buzzer' => 'boolean',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
@@ -45,8 +47,39 @@ class Game extends Model
     /** Minutes avant le coup d'envoi auxquelles les managers d'équipe sont prévenus. */
     public const REMINDER_MINUTES = 10;
 
+    /** Caractères du code spectateur : sans 0/O, 1/I/L, faciles à lire et à dicter. */
+    private const WATCH_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+    public static function newWatchCode(): string
+    {
+        do {
+            $code = '';
+            for ($i = 0; $i < 5; $i++) {
+                $code .= self::WATCH_ALPHABET[random_int(0, strlen(self::WATCH_ALPHABET) - 1)];
+            }
+        } while (self::where('watch_code', $code)->exists());
+
+        return $code;
+    }
+
     protected static function booted(): void
     {
+        // Chaque match reçoit un code pour que les spectateurs le retrouvent directement.
+        static::creating(function (Game $game) {
+            $game->watch_code ??= self::newWatchCode();
+        });
+
+        // Hors du jeu (mi-temps, fin, match rouvert…), le buzzer se ferme ; les téléphones sont prévenus.
+        static::updated(function (Game $game) {
+            if (! $game->wasChanged(['status', 'phase']) || ! $game->buzzer_channel) {
+                return;
+            }
+            if (! $game->isInPlay() && $game->buzzer_status !== Buzzer::CLOSED) {
+                $game->forceFill(['buzzer_status' => Buzzer::CLOSED, 'buzzer_excluded_team_id' => null])->saveQuietly();
+            }
+            app(Buzzer::class)->announce($game);
+        });
+
         // Un match reprogrammé déclenchera un nouveau rappel.
         static::saving(function (Game $game) {
             if ($game->exists && $game->isDirty('scheduled_at')) {
@@ -83,7 +116,7 @@ class Game extends Model
         }
         $team = $teamId === $this->team_a_id ? $this->teamA : $this->teamB;
 
-        return $this->isManagedBy($user) || $team?->owner_id === $user->id;
+        return $this->isManagedBy($user) || ($team?->isManagedBy($user) ?? false);
     }
 
     /**
@@ -99,17 +132,20 @@ class Game extends Model
         if ($stored->isNotEmpty()) {
             $players = $team->players->keyBy('id');
 
+            // Le capitaine sur le terrain passe toujours en tête.
             return $stored->filter(fn ($row) => $players->has($row->player_id))
-                ->sortBy(fn ($row) => [$row->on_field ? 0 : 1, $row->position])
+                ->sortBy(fn ($row) => [$row->on_field ? 0 : 1, $row->on_field && $players[$row->player_id]->is_captain ? 0 : 1, $row->position])
                 ->map(fn ($row) => ['player' => $players[$row->player_id], 'role' => $row->role, 'on_field' => $row->on_field])
                 ->values();
         }
 
-        return $team->players->take(self::STARTERS + self::MAX_SUBSTITUTES)->values()->map(fn (Player $player, int $i) => [
-            'player' => $player,
-            'role' => $i < self::STARTERS ? GamePlayer::ROLE_STARTER : GamePlayer::ROLE_SUBSTITUTE,
-            'on_field' => $i < self::STARTERS,
-        ]);
+        // Composition par défaut : le capitaine en tête, puis l'ordre de l'effectif.
+        return $team->players->sortBy(fn (Player $player) => [$player->is_captain ? 0 : 1, $player->position])
+            ->take(self::STARTERS + self::MAX_SUBSTITUTES)->values()->map(fn (Player $player, int $i) => [
+                'player' => $player,
+                'role' => $i < self::STARTERS ? GamePlayer::ROLE_STARTER : GamePlayer::ROLE_SUBSTITUTE,
+                'on_field' => $i < self::STARTERS,
+            ]);
     }
 
     /** Enregistre la composition par défaut d'une équipe si sa feuille n'existe pas encore. */
@@ -132,11 +168,22 @@ class Game extends Model
     public function lockLineups(): void
     {
         foreach ([$this->teamA, $this->teamB] as $team) {
-            if ($this->lineupFor($team)->where('on_field', true)->count() < self::STARTERS) {
+            $onField = $this->lineupFor($team)->where('on_field', true);
+            if ($onField->count() < self::STARTERS) {
                 abort(422, "« {$team->name} » doit aligner ".self::STARTERS.' joueurs titulaires pour commencer le match.');
+            }
+            $captain = $team->players->firstWhere('is_captain', true);
+            if ($captain && ! $onField->contains(fn ($row) => $row['player']->id === $captain->id)) {
+                abort(422, "Le capitaine de « {$team->name} » ({$captain->name}) doit être titulaire pour commencer le match.");
             }
             $this->persistLineup($team);
         }
+    }
+
+    /** Le jeu est en cours (hors mi-temps) : seul moment où l'on avance rubriques et questions. */
+    public function isInPlay(): bool
+    {
+        return $this->status === self::STATUS_LIVE && $this->phase !== self::PHASE_HALFTIME;
     }
 
     public function isOnField(int $playerId): bool
@@ -144,6 +191,16 @@ class Game extends Model
         $team = $this->teamA->players->contains('id', $playerId) ? $this->teamA : $this->teamB;
 
         return $this->lineupFor($team)->contains(fn ($row) => $row['player']->id === $playerId && $row['on_field']);
+    }
+
+    public function questions(): HasMany
+    {
+        return $this->hasMany(GameQuestion::class)->orderBy('position')->orderBy('id');
+    }
+
+    public function currentQuestion(): BelongsTo
+    {
+        return $this->belongsTo(GameQuestion::class, 'current_question_id');
     }
 
     public function resultSheet(): HasOne

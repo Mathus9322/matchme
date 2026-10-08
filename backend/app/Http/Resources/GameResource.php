@@ -4,13 +4,18 @@ namespace App\Http\Resources;
 
 use App\Models\Competition;
 use App\Models\Game;
+use App\Models\GameQuestion;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /** @mixin Game */
 class GameResource extends JsonResource
 {
+    /** Relations nécessaires à la vue détaillée d'un match. */
+    public const DETAIL_RELATIONS = ['competition.rubrics', 'competition.owner', 'group', 'owner', 'teamA.players', 'teamB.players', 'events.player', 'events.rubric', 'sheet', 'resultSheet', 'substitutions.playerIn', 'substitutions.playerOut', 'questions'];
+
     /** Ajoute le détail des joueurs et le fil des événements (vue match en direct). */
     public bool $detailed = false;
 
@@ -49,9 +54,17 @@ class GameResource extends JsonResource
                 'team_id' => $event->team_id,
                 'player' => $event->player?->name,
                 'rubric' => $event->rubric?->name,
+                'question_id' => $event->question_id,
                 'points' => $event->points,
                 'created_at' => $event->created_at,
             ])),
+            'questions' => $this->when($this->detailed, fn () => $this->questionsFor($user)),
+            'current_question_id' => $this->when($this->detailed, fn () => $this->current_question_id),
+            'uses_buzzer' => (bool) $this->uses_buzzer,
+            'watch_code' => $this->watch_code,
+            // Rubrique en cours : celle choisie par le manager, sinon la première du programme.
+            'current_rubric_id' => $this->when($this->detailed, fn () => $this->current_rubric_id ?? $this->competition?->rubrics->first()?->id),
+            'questions_source' => $this->when($this->detailed && $this->isManagedBy($user), fn () => $this->questions_source),
             'result_sheet_id' => $this->when($this->detailed, fn () => $this->resultSheet?->id),
             'substitutions' => $this->when($this->detailed, fn () => $this->substitutions->sortByDesc('id')->values()->map(fn ($sub) => [
                 'id' => $sub->id,
@@ -65,6 +78,33 @@ class GameResource extends JsonResource
             'can_manage' => $this->when($this->relationLoaded('competition'), fn () => $this->isManagedBy($user)),
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    /**
+     * Questions du match : toutes pour le manager ; pour le public, seulement celles affichées,
+     * et la réponse seulement une fois révélée. Chaque question liste les joueurs qui ont répondu.
+     */
+    private function questionsFor(?User $user): array
+    {
+        $manager = $this->isManagedBy($user);
+
+        return $this->questions
+            ->filter(fn ($q) => $manager || $q->isVisible())
+            ->map(fn ($q) => [
+                'id' => $q->id,
+                'position' => $q->position,
+                'rubric' => $q->rubric,
+                'question' => $q->question,
+                'answer' => $manager || $q->status === GameQuestion::STATUS_REVEALED ? $q->answer : null,
+                'points' => $q->points,
+                'status' => $q->status,
+                'answered' => $this->events->where('question_id', $q->id)->sortBy('id')->values()->map(fn ($e) => [
+                    'player' => $e->player?->name,
+                    'photo_url' => $e->player?->imageUrl(),
+                    'team_id' => $e->team_id,
+                    'points' => $e->points,
+                ]),
+            ])->values()->all();
     }
 
     private function team(?Team $team, int $score): ?array
@@ -84,6 +124,7 @@ class GameResource extends JsonResource
                 'id' => $row['player']->id,
                 'name' => $row['player']->name,
                 'photo_url' => $row['player']->imageUrl(),
+                'is_captain' => $row['player']->is_captain,
                 'role' => $row['role'],
                 'on_field' => $row['on_field'],
                 'score' => (int) $events->where('player_id', $row['player']->id)->sum('points'),
@@ -93,6 +134,7 @@ class GameResource extends JsonResource
                 'id' => $player->id,
                 'name' => $player->name,
                 'photo_url' => $player->imageUrl(),
+                'is_captain' => $player->is_captain,
             ])->values();
             $data['can_manage_team'] = $this->canManageTeam(request()->user('sanctum'), $team->id);
         }

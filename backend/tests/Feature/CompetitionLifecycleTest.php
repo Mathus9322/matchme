@@ -55,7 +55,7 @@ class CompetitionLifecycleTest extends TestCase
 
         $game = $this->competition->games()->create(['team_a_id' => $a->id, 'team_b_id' => $b->id]);
         $scheduled = $this->competition->games()->create(['team_a_id' => $b->id, 'team_b_id' => $a->id]);
-        $this->postJson("/api/games/{$game->id}/start")->assertOk();
+        $this->postJson("/api/games/{$game->id}/start", ['uses_buzzer' => false])->assertOk();
 
         $this->postJson($this->url('finish'))->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'en direct'));
 
@@ -67,12 +67,12 @@ class CompetitionLifecycleTest extends TestCase
             ->assertJsonPath('data.ends_on', now()->toDateString());
 
         // Plus aucun match ne peut être démarré ou créé.
-        $this->postJson("/api/games/{$scheduled->id}/start")->assertStatus(422);
+        $this->postJson("/api/games/{$scheduled->id}/start", ['uses_buzzer' => false])->assertStatus(422);
         $this->postJson("/api/competitions/{$this->competition->id}/games", ['team_a_id' => $a->id, 'team_b_id' => $b->id])->assertStatus(422);
 
         // Réouverture possible en cas d'erreur.
         $this->postJson($this->url('reopen'))->assertOk()->assertJsonPath('data.status', 'ongoing');
-        $this->postJson("/api/games/{$scheduled->id}/start")->assertOk();
+        $this->postJson("/api/games/{$scheduled->id}/start", ['uses_buzzer' => false])->assertOk();
     }
 
     public function test_only_the_organizer_changes_the_lifecycle(): void

@@ -1,3 +1,4 @@
+import { CreateSpace } from '../shared/create-space';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -21,7 +22,7 @@ interface Showcase {
 
 @Component({
   selector: 'app-home',
-  imports: [Icon, RouterLink, GameRow, CountUp, Reveal],
+  imports: [CreateSpace, Icon, RouterLink, GameRow, CountUp, Reveal],
   template: `
     <section class="hero">
       <div class="hero-bg" aria-hidden="true">
@@ -41,12 +42,12 @@ interface Showcase {
           Organisez vos tournois, composez vos équipes et faites vivre chaque bonne réponse en temps réel, de la première question à la finale.
         </p>
         <div class="hero-actions step" style="--d: 4">
-          @if (auth.canOrganize()) {
+          @if (auth.hasSpace()) {
             <a class="btn btn-hero" routerLink="/gestion">Espace gestion <span class="arrow"><app-icon name="arrow-right" /></span></a>
             <a class="btn btn-outline" routerLink="/competitions">Voir les compétitions</a>
           } @else if (auth.isLoggedIn()) {
-            <a class="btn btn-hero" routerLink="/competitions">Voir les compétitions <span class="arrow"><app-icon name="arrow-right" /></span></a>
-            <a class="btn btn-outline" routerLink="/a-propos">Découvrir MatchMe</a>
+            <app-create-space btnClass="btn btn-hero" />
+            <a class="btn btn-outline" routerLink="/competitions">Voir les compétitions</a>
           } @else {
             <a class="btn btn-hero" routerLink="/inscription">Commencer gratuitement <span class="arrow"><app-icon name="arrow-right" /></span></a>
             <a class="btn btn-outline" routerLink="/a-propos">Découvrir MatchMe</a>

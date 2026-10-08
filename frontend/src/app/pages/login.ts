@@ -39,7 +39,7 @@ export class LoginPage {
     this.error.set('');
     this.auth.login(this.email, this.password).subscribe({
       // Managers et admins arrivent dans leur espace de gestion, les autres sur le site public.
-      next: () => this.router.navigateByUrl(this.retour() || (this.auth.canOrganize() ? '/gestion' : '/')),
+      next: () => this.router.navigateByUrl(this.retour() || (this.auth.hasSpace() ? '/gestion' : '/')),
       error: (e) => {
         this.error.set(errorMessage(e));
         this.loading.set(false);

@@ -12,7 +12,7 @@ abstract class TestCase extends BaseTestCase
     {
         $team = Team::create(['owner_id' => $ownerId, 'name' => $name]);
         foreach (range(1, $players) as $i) {
-            $team->players()->create(['name' => "{$name} joueur {$i}", 'position' => $i - 1]);
+            $team->players()->create(['name' => "{$name} joueur {$i}", 'position' => $i - 1, 'is_captain' => $i === 1]);
         }
 
         return $team;

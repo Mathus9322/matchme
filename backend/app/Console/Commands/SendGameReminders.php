@@ -15,7 +15,7 @@ class SendGameReminders extends Command
     public function handle(): int
     {
         $games = Game::query()
-            ->with(['teamA.owner', 'teamB.owner', 'competition'])
+            ->with(['teamA.owner', 'teamA.coach', 'teamB.owner', 'teamB.coach', 'competition'])
             ->where('status', Game::STATUS_SCHEDULED)
             ->whereNull('reminder_sent_at')
             ->whereBetween('scheduled_at', [now(), now()->addMinutes(Game::REMINDER_MINUTES)])
@@ -25,11 +25,12 @@ class SendGameReminders extends Command
             // Marqué avant l'envoi : un échec d'e-mail ne doit pas provoquer de rappels en double.
             $game->forceFill(['reminder_sent_at' => now()])->saveQuietly();
 
-            // Un seul rappel par manager, même s'il gère les deux équipes.
+            // Manager et coach de chaque équipe, un seul rappel par personne même s'il gère les deux équipes.
             collect([$game->teamA, $game->teamB])
-                ->filter(fn ($team) => $team?->owner !== null)
-                ->unique('owner_id')
-                ->each(fn ($team) => $team->owner->notify(new GameStartingSoon($game, $team)));
+                ->filter()
+                ->flatMap(fn ($team) => collect([$team->owner, $team->coach])->filter()->map(fn ($user) => [$user, $team]))
+                ->unique(fn ($pair) => $pair[0]->id)
+                ->each(fn ($pair) => $pair[0]->notify(new GameStartingSoon($game, $pair[1])));
         }
 
         $this->info($games->count().' match(s) rappelé(s).');

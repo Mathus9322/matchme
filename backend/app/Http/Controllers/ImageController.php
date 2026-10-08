@@ -75,6 +75,6 @@ class ImageController extends Controller
     private function authorizeTeam(Request $request, Team $team): void
     {
         $user = $request->user();
-        abort_unless($user->isAdmin() || $user->id === $team->owner_id, 403, 'Vous ne pouvez pas modifier cette équipe.');
+        abort_unless($team->isManagedBy($user), 403, 'Vous ne pouvez pas modifier cette équipe.');
     }
 }

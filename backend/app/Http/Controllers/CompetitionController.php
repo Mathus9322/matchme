@@ -173,7 +173,8 @@ class CompetitionController extends Controller
     private function authorizeRegistration(Request $request, Competition $competition, Team $team): void
     {
         $user = $request->user();
-        $ownsTeam = $user->id === $team->owner_id && $competition->status === 'open';
+        $ownsTeam = $user->id === $team->owner_id || $user->id === $team->coach_id;
+        $ownsTeam = $ownsTeam && $competition->status === 'open';
 
         abort_unless($competition->isManagedBy($user) || $ownsTeam, 403, 'Vous ne pouvez pas gérer les inscriptions de cette compétition.');
     }

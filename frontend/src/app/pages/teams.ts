@@ -16,7 +16,7 @@ import { Avatar } from '../shared/avatar';
         <p class="eyebrow">{{ area.inManage() ? 'Espace gestion' : 'Effectifs' }}</p>
         <h1 class="page-title">{{ area.inManage() && !auth.isAdmin() ? 'Mes équipes' : 'Équipes' }}</h1>
       </div>
-      @if (area.inManage()) {
+      @if (area.inManage() && auth.canOrganize()) {
         <a class="btn" routerLink="/gestion/equipes/nouvelle">+ Nouvelle équipe</a>
       }
     </div>
@@ -36,9 +36,10 @@ import { Avatar } from '../shared/avatar';
             <div style="flex: 1; min-width: 0">
               <h3 style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"><a class="stretched" [routerLink]="area.link('equipes', team.id)">{{ team.name }}</a></h3>
               <span class="badge">{{ team.players_count }} joueurs</span>
+              @if (team.is_coach) { <span class="badge badge-ongoing">Vous êtes coach</span> }
             </div>
           </div>
-          <p class="meta">{{ team.city || 'Ville non renseignée' }} · capitaine {{ team.owner?.name }}</p>
+          <p class="meta">{{ team.city || 'Ville non renseignée' }} · coach {{ team.coach?.name || 'à désigner' }}</p>
           @if (team.can_manage && area.inManage()) {
             <div class="row edit-row" style="margin-top: 14px">
               <a class="btn btn-ghost btn-sm" [routerLink]="area.manage('equipes', team.id, 'modifier')">Modifier l’effectif</a>
@@ -69,7 +70,8 @@ export class TeamsPage {
     const term = this.search().trim().toLowerCase();
     // Espace gestion : un manager ne voit que ses équipes (l'admin peut filtrer les siennes).
     const mine = this.area.inManage() && (!this.auth.isAdmin() || this.mineOnly());
-    return this.teams().filter((t) => (!mine || t.owner?.id === this.auth.user()?.id) && (!term || t.name.toLowerCase().includes(term)));
+    const me = this.auth.user()?.id;
+    return this.teams().filter((t) => (!mine || t.owner?.id === me || t.coach?.id === me) && (!term || t.name.toLowerCase().includes(term)));
   });
 
   constructor() {

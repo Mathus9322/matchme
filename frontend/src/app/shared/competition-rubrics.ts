@@ -6,6 +6,7 @@ import { Competition, Rubric, Scale, scaleValues } from '../core/models';
 import { Modal } from './modal';
 import { ScaleEditor } from './scale-editor';
 import { Icon } from './icon';
+import { DialogService } from './dialog';
 
 type Mode = 'scale' | 'catalog' | 'custom' | null;
 
@@ -149,6 +150,7 @@ type Mode = 'scale' | 'catalog' | 'custom' | null;
   `,
 })
 export class CompetitionRubrics {
+  private readonly dialog = inject(DialogService);
   protected readonly api = inject(ApiService);
   readonly competition = input.required<Competition>();
   readonly changed = output<void>();
@@ -224,8 +226,8 @@ export class CompetitionRubrics {
     this.run(request, this.editingId ? 'Rubrique modifiée.' : 'Rubrique ajoutée.', true);
   }
 
-  protected remove(rubric: Rubric): void {
-    if (confirm(`Supprimer la rubrique « ${rubric.name} » ? Les points déjà marqués restent acquis.`)) {
+  protected async remove(rubric: Rubric): Promise<void> {
+    if (await this.dialog.confirm('Les points déjà marqués restent acquis.', { title: `Supprimer la rubrique « ${rubric.name} » ?`, confirmLabel: 'Supprimer', danger: true })) {
       this.run(this.api.deleteRubric(rubric.id), 'Rubrique supprimée.');
     }
   }

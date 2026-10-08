@@ -19,7 +19,10 @@
     "@angular/router": "^22.2.0",
     "html-to-image": "^1.11.13",
     "jspdf": "^4.2.1",
+    "laravel-echo": "^2.6.1",
     "lucide": "^1.53.0",
+    "pusher-js": "^8.6.0",
+    "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -27,6 +30,7 @@
     "@angular/build": "^22.2.1",
     "@angular/cli": "^22.2.1",
     "@angular/compiler-cli": "^22.2.0",
+    "@types/qrcode": "^1.5.6",
     "jsdom": "^30.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",

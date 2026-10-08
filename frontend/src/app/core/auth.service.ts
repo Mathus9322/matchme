@@ -30,6 +30,14 @@ export class AuthService {
   readonly isAdmin = computed(() => this.user()?.role === 'admin');
   /** Les managers et les administrateurs peuvent créer des compétitions. */
   readonly canOrganize = computed(() => this.isAdmin() || this.user()?.role === 'manager');
+  readonly isCoach = computed(() => !!this.user()?.is_coach);
+  /** Accès à l'espace de gestion : managers, administrateurs et coachs (pour leurs équipes). */
+  readonly hasSpace = computed(() => this.canOrganize() || this.isCoach());
+
+  /** « Créer mon espace » : l'utilisateur devient manager et peut organiser ses compétitions. */
+  createSpace() {
+    return this.http.post<{ data: User }>('/api/auth/me/space', {}).pipe(tap(({ data }) => this.user.set(data)), map(({ data }) => data));
+  }
 
   /** Recharge le profil au démarrage si un jeton est enregistré. */
   restore(): Promise<void> {

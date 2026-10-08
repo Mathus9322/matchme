@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Resources\GameResource;
 use App\Models\Competition;
 use App\Models\Game;
+use App\Models\GamePlayer;
 use App\Models\ResultSheet;
+use App\Models\Team;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -23,7 +26,15 @@ class GameController extends Controller
             ->when($request->query('status'), fn ($q, $status) => $q->whereIn('status', explode(',', $status)))
             ->when($request->query('competition_id'), fn ($q, $id) => $q->where('competition_id', $id))
             ->when($request->boolean('friendly'), fn ($q) => $q->whereNull('competition_id'))
-            ->when($request->boolean('mine'), fn ($q) => $q->where('owner_id', $request->user('sanctum')?->id ?? 0))
+            // Mes matchs : ceux que j'arbitre et ceux des équipes que je gère (manager ou coach).
+            ->when($request->boolean('mine'), function ($q) use ($request) {
+                $user = $request->user('sanctum');
+                if (! $user) {
+                    return $q->whereRaw('0 = 1');
+                }
+                $teamIds = Team::query()->managedBy($user)->select('id');
+                $q->where(fn ($q) => $q->where('owner_id', $user->id)->orWhereIn('team_a_id', $teamIds)->orWhereIn('team_b_id', $teamIds));
+            })
             ->orderByRaw("case status when 'live' then 0 when 'scheduled' then 1 else 2 end")
             ->orderBy('scheduled_at')
             ->latest('id')
@@ -31,6 +42,16 @@ class GameController extends Controller
             ->get();
 
         return GameResource::collection($games);
+    }
+
+    /** Code spectateur : renvoie le match correspondant (lettres en majuscules, espaces et tirets ignorés). */
+    public function watch(string $code): JsonResponse
+    {
+        $code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code));
+        $game = Game::where('watch_code', $code)->first();
+        abort_unless($game, 404, 'Aucun match ne correspond à ce code.');
+
+        return response()->json(['data' => ['id' => $game->id]]);
     }
 
     public function show(Game $game): GameResource
@@ -61,11 +82,25 @@ class GameController extends Controller
             'team_a.players' => ['required_without:team_a.id', 'array', 'min:'.Game::STARTERS, 'max:'.(Game::STARTERS + Game::MAX_SUBSTITUTES)],
             'team_b.players' => ['required_without:team_b.id', 'array', 'min:'.Game::STARTERS, 'max:'.(Game::STARTERS + Game::MAX_SUBSTITUTES)],
             'team_a.players.*' => ['required', 'string', 'max:60'],
+            'team_a.captain' => ['nullable', 'integer', 'min:0', 'max:'.max(0, count((array) $request->input('team_a.players', [])) - 1)],
+            'team_b.captain' => ['nullable', 'integer', 'min:0', 'max:'.max(0, count((array) $request->input('team_b.players', [])) - 1)],
             'team_b.players.*' => ['required', 'string', 'max:60'],
+            ...$this->friendlyLineupRules($request, 'team_a'),
+            ...$this->friendlyLineupRules($request, 'team_b'),
             'round' => ['nullable', 'string', 'max:60'],
             'scheduled_at' => ['nullable', 'date'],
             'start' => ['boolean'],
+            // Démarrage immédiat : le mode d'arbitrage doit être choisi.
+            'uses_buzzer' => ['required_if_accepted:start', 'boolean'],
         ], [
+            'uses_buzzer.required_if_accepted' => 'Choisissez de jouer avec ou sans buzzer avant de démarrer le match.',
+            'team_a.starters.size' => 'Choisissez exactement 4 titulaires pour l’équipe A.',
+            'team_b.starters.size' => 'Choisissez exactement 4 titulaires pour l’équipe B.',
+            'team_a.substitutes.max' => 'L’équipe A compte au plus 2 remplaçants.',
+            'team_b.substitutes.max' => 'L’équipe B compte au plus 2 remplaçants.',
+            '*.starters.*.exists' => 'Ce joueur n’appartient pas à l’équipe.',
+            '*.substitutes.*.exists' => 'Ce joueur n’appartient pas à l’équipe.',
+            '*.substitutes.*.not_in' => 'Un joueur ne peut pas être à la fois titulaire et remplaçant.',
             'team_a.name.required_without' => 'Donnez un nom à l’équipe A ou choisissez une équipe existante.',
             'team_b.name.required_without' => 'Donnez un nom à l’équipe B ou choisissez une équipe existante.',
             'team_a.players.required_without' => 'Ajoutez au moins un joueur à l’équipe A.',
@@ -80,6 +115,15 @@ class GameController extends Controller
         $user = $request->user();
         $start = $request->boolean('start');
 
+        // Match créé directement : uniquement avec ses propres équipes (ou des équipes rapides créées ici).
+        // Pour affronter l'équipe d'un autre manager, on passe par une proposition de match amical.
+        foreach (['team_a' => 'A', 'team_b' => 'B'] as $key => $label) {
+            $teamId = $validated[$key]['id'] ?? null;
+            if ($teamId && ! $user->isAdmin() && Team::whereKey($teamId)->value('owner_id') !== $user->id) {
+                throw ValidationException::withMessages(["{$key}.id" => "L’équipe {$label} ne vous appartient pas : créez votre propre équipe, ou proposez un match à son coach."]);
+            }
+        }
+
         $game = DB::transaction(function () use ($validated, $user, $start) {
             [$teamA, $teamB] = array_map(function (array $side) use ($user) {
                 if (! empty($side['id'])) {
@@ -87,7 +131,8 @@ class GameController extends Controller
                 }
                 $team = $user->teams()->create(['name' => trim($side['name'])]);
                 foreach (array_values($side['players']) as $position => $name) {
-                    $team->players()->create(['name' => trim($name), 'position' => $position]);
+                    // Capitaine désigné, sinon le premier joueur.
+                    $team->players()->create(['name' => trim($name), 'position' => $position, 'is_captain' => $position === (int) ($side['captain'] ?? 0)]);
                 }
 
                 return $team->id;
@@ -99,7 +144,34 @@ class GameController extends Controller
                 'team_b_id' => $teamB,
                 'round' => $validated['round'] ?? 'Match amical',
                 'scheduled_at' => $validated['scheduled_at'] ?? ($start ? now() : null),
+                'uses_buzzer' => (bool) ($validated['uses_buzzer'] ?? false),
             ]);
+
+            // Feuille de match composée à la création pour les équipes existantes (titulaires puis remplaçants).
+            foreach (['team_a' => $teamA, 'team_b' => $teamB] as $key => $teamId) {
+                $side = $validated[$key];
+                if (empty($side['id']) || empty($side['starters'])) {
+                    continue;
+                }
+                $team = Team::with('players')->find($teamId);
+                $captain = $team->captainId();
+                if ($captain !== null && ! in_array($captain, $side['starters'], true)) {
+                    throw ValidationException::withMessages(["{$key}.starters" => "Le capitaine de « {$team->name} » doit être titulaire : il joue toujours en première position."]);
+                }
+                $side['starters'] = $team->captainFirst($side['starters']);
+                $position = 0;
+                foreach (['starters' => GamePlayer::ROLE_STARTER, 'substitutes' => GamePlayer::ROLE_SUBSTITUTE] as $list => $role) {
+                    foreach ($side[$list] ?? [] as $playerId) {
+                        $game->sheet()->create([
+                            'team_id' => $teamId,
+                            'player_id' => $playerId,
+                            'role' => $role,
+                            'on_field' => $role === GamePlayer::ROLE_STARTER,
+                            'position' => $position++,
+                        ]);
+                    }
+                }
+            }
 
             // Coup d'envoi immédiat : feuille de match figée et première mi-temps, comme un match démarré.
             if ($start) {
@@ -110,6 +182,35 @@ class GameController extends Controller
 
             return $game;
         });
+
+        return $this->detailed($game);
+    }
+
+    /** Composition facultative d'une équipe existante : 4 titulaires et jusqu'à 2 remplaçants, choisis dans son effectif. */
+    private function friendlyLineupRules(Request $request, string $side): array
+    {
+        $playerRule = Rule::exists('players', 'id')->where('team_id', (int) $request->input("{$side}.id"));
+
+        return [
+            "{$side}.starters" => ['nullable', 'array', 'size:'.Game::STARTERS],
+            "{$side}.starters.*" => ['integer', 'distinct', $playerRule],
+            "{$side}.substitutes" => ['nullable', 'array', 'max:'.Game::MAX_SUBSTITUTES],
+            "{$side}.substitutes.*" => ['integer', 'distinct', 'not_in:'.implode(',', (array) $request->input("{$side}.starters", [])), $playerRule],
+        ];
+    }
+
+    /** Change la rubrique en cours : réservé au manager du match, uniquement pendant le jeu. */
+    public function rubric(Request $request, Game $game): GameResource
+    {
+        abort_unless($game->isManagedBy($request->user()), 403, 'Seul le manager du match fait avancer les rubriques.');
+        abort_unless($game->isInPlay(), 422, 'Les rubriques avancent uniquement pendant le jeu.');
+
+        $rubrics = $game->competition?->rubrics ?? collect();
+        $validated = $request->validate(
+            ['rubric_id' => ['required', 'integer', Rule::in($rubrics->pluck('id'))]],
+            ['rubric_id.in' => 'Cette rubrique n’appartient pas à la compétition.'],
+        );
+        $game->update(['current_rubric_id' => $validated['rubric_id']]);
 
         return $this->detailed($game);
     }
@@ -139,11 +240,17 @@ class GameController extends Controller
         $this->authorizeGame($request, $game);
         $this->ensureCompetitionNotFinished($game);
         abort_if($game->status === Game::STATUS_LIVE, 422, 'Le match est déjà en cours.');
+        // Toujours choisir, au coup d'envoi comme à la réouverture : avec ou sans buzzer.
+        $validated = $request->validate(
+            ['uses_buzzer' => ['required', 'boolean']],
+            ['uses_buzzer.required' => 'Choisissez de jouer avec ou sans buzzer avant de démarrer le match.'],
+        );
 
         $game->loadMissing(['teamA.players', 'teamB.players']);
         $game->lockLineups();
 
         $game->update([
+            'uses_buzzer' => $validated['uses_buzzer'],
             'status' => Game::STATUS_LIVE,
             // Un match rouvert reprend en seconde mi-temps.
             'phase' => $game->status === Game::STATUS_FINISHED ? Game::PHASE_SECOND_HALF : Game::PHASE_FIRST_HALF,
@@ -179,7 +286,8 @@ class GameController extends Controller
             'team_id' => ['required', 'integer', Rule::in([$game->team_a_id, $game->team_b_id])],
             'player_id' => ['nullable', 'integer', Rule::exists('players', 'id')->where('team_id', $request->input('team_id'))],
             // Quand la compétition a des rubriques, chaque point est rattaché à l'une d'elles.
-            'rubric_id' => [$rubrics->isEmpty() ? 'prohibited' : 'required', 'integer', Rule::in($rubrics->pluck('id'))],
+            // L'interface envoie toujours rubric_id (null sans rubrique) : null est accepté quand il n'y a pas de rubriques.
+            'rubric_id' => $rubrics->isEmpty() ? ['nullable', 'prohibited'] : ['required', 'integer', Rule::in($rubrics->pluck('id'))],
             'points' => ['required', 'integer'],
         ], [
             'rubric_id.required' => 'Choisissez la rubrique en cours.',
@@ -199,7 +307,8 @@ class GameController extends Controller
             ]);
         }
 
-        $game->events()->create([...$validated, 'user_id' => $request->user()->id]);
+        // Le point est rattaché à la question affichée au public, s'il y en a une.
+        $game->events()->create([...$validated, 'question_id' => $game->current_question_id, 'user_id' => $request->user()->id]);
         $game->touch();
 
         return $this->detailed($game);
@@ -268,7 +377,7 @@ class GameController extends Controller
 
     private function detailed(Game $game): GameResource
     {
-        $game->load(['competition.rubrics', 'competition.owner', 'group', 'owner', 'teamA.players', 'teamB.players', 'events.player', 'events.rubric', 'sheet', 'resultSheet', 'substitutions.playerIn', 'substitutions.playerOut']);
+        $game->load(GameResource::DETAIL_RELATIONS);
 
         return (new GameResource($game))->detailed();
     }

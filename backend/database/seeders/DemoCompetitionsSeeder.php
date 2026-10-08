@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 
 /**
  * 20 compétitions de démonstration, chacune organisée par un manager différent.
+ * Jeu de données volumineux, non lancé par défaut : php artisan db:seed --class=DemoCompetitionsSeeder
  */
 class DemoCompetitionsSeeder extends Seeder
 {
@@ -83,6 +84,7 @@ class DemoCompetitionsSeeder extends Seeder
             foreach (self::TEAM_NAMES as $t => $label) {
                 $team = Team::create([
                     'owner_id' => $captains[($c * 12 + $t) % 12]->id,
+                    'coach_id' => $captains[($c * 12 + $t) % 12]->id,
                     'name' => "{$label} de {$city}",
                     'city' => $city,
                 ]);
@@ -92,7 +94,7 @@ class DemoCompetitionsSeeder extends Seeder
                     $names[self::FIRST_NAMES[mt_rand(0, 19)].' '.self::LAST_NAMES[mt_rand(0, 19)]] = true;
                 }
                 foreach (array_keys($names) as $position => $name) {
-                    $team->players()->create(['name' => $name, 'position' => $position]);
+                    $team->players()->create(['name' => $name, 'position' => $position, 'is_captain' => $position === 0]);
                 }
                 $teams->push($team->load('players'));
             }

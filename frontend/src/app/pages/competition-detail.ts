@@ -16,15 +16,18 @@ import { AreaService } from '../core/area.service';
 import { Modal } from '../shared/modal';
 import { TeamPickerModal } from '../shared/team-picker-modal';
 import { GameRow } from '../shared/game-row';
+import { BackButton } from '../shared/back-button';
 import { Icon } from '../shared/icon';
+import { DialogService } from '../shared/dialog';
 
 const TABS = ['infos', 'equipes', 'matchs', 'resultats', 'classement', 'organisation', 'rubriques'] as const;
 type Tab = (typeof TABS)[number];
 
 @Component({
   selector: 'app-competition-detail',
-  imports: [Icon, FormsModule, RouterLink, DatePipe, NgTemplateOutlet, Modal, Avatar, GameRow, CompetitionGroups, CompetitionEditModal, TeamPickerModal, CompetitionRubrics, LeagueSchedule],
+  imports: [BackButton, Icon, FormsModule, RouterLink, DatePipe, NgTemplateOutlet, Modal, Avatar, GameRow, CompetitionGroups, CompetitionEditModal, TeamPickerModal, CompetitionRubrics, LeagueSchedule],
   template: `
+    <app-back-button [fallback]="area.link('competitions')" />
     @if (competition(); as c) {
       <div class="page-head">
         <div>
@@ -427,6 +430,7 @@ type Tab = (typeof TABS)[number];
   `,
 })
 export class CompetitionDetailPage implements OnInit {
+  private readonly dialog = inject(DialogService);
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   protected readonly auth = inject(AuthService);
@@ -540,8 +544,8 @@ export class CompetitionDetailPage implements OnInit {
     this.changeStatus(this.api.finishCompetition(+this.id()), 'La compétition est terminée. Le classement est figé.');
   }
 
-  protected reopen(): void {
-    if (confirm('Rouvrir la compétition ? Elle repassera « En cours » et les matchs pourront de nouveau être joués.')) {
+  protected async reopen(): Promise<void> {
+    if (await this.dialog.confirm('Elle repassera « En cours » et les matchs pourront de nouveau être joués.', { title: 'Rouvrir la compétition ?', confirmLabel: 'Rouvrir' })) {
       this.changeStatus(this.api.reopenCompetition(+this.id()), 'La compétition est rouverte.');
     }
   }
@@ -592,8 +596,8 @@ export class CompetitionDetailPage implements OnInit {
     this.load();
   }
 
-  protected detach(team: Team): void {
-    if (confirm(`Retirer ${team.name} de la compétition ?`)) {
+  protected async detach(team: Team): Promise<void> {
+    if (await this.dialog.confirm(`Retirer ${team.name} de la compétition ?`, { confirmLabel: 'Retirer', danger: true })) {
       this.run(this.api.detachTeam(+this.id(), team.id));
     }
   }
@@ -636,8 +640,8 @@ export class CompetitionDetailPage implements OnInit {
     });
   }
 
-  protected remove(): void {
-    if (confirm('Supprimer définitivement cette compétition et tous ses matchs ?')) {
+  protected async remove(): Promise<void> {
+    if (await this.dialog.confirm('Supprimer définitivement cette compétition et tous ses matchs ?', { confirmLabel: 'Supprimer', danger: true })) {
       this.api.deleteCompetition(+this.id()).subscribe({
         next: () => this.router.navigate(this.area.link('competitions')),
         error: (e) => this.error.set(errorMessage(e)),

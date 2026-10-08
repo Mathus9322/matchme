@@ -65,7 +65,7 @@ class CompetitionGroupTest extends TestCase
         $this->postJson("/api/groups/{$groupId}/schedule")->assertJsonPath('created', 0);
 
         $game = $this->competition->games()->first();
-        $this->postJson("/api/games/{$game->id}/start");
+        $this->postJson("/api/games/{$game->id}/start", ['uses_buzzer' => false]);
         $this->postJson("/api/games/{$game->id}/events", ['team_id' => $game->team_a_id, 'points' => 40]);
         $this->toSecondHalf($game->id);
         $this->postJson("/api/games/{$game->id}/finish");
@@ -93,7 +93,7 @@ class CompetitionGroupTest extends TestCase
         $this->postJson("/api/competitions/{$this->competition->id}/groups/draw", ['count' => 2]);
         $groupId = $this->competition->groups()->first()->id;
         $this->postJson("/api/groups/{$groupId}/schedule");
-        $this->postJson('/api/games/'.$this->competition->games()->first()->id.'/start');
+        $this->postJson('/api/games/'.$this->competition->games()->first()->id.'/start', ['uses_buzzer' => false]);
 
         $this->postJson("/api/competitions/{$this->competition->id}/groups/draw", ['count' => 2])->assertStatus(422);
     }

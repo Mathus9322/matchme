@@ -12,13 +12,19 @@ export const adminGuard: CanActivateFn = () => {
   return auth.isAdmin() || inject(Router).createUrlTree(['/gestion']);
 };
 
-/** Espace de gestion : managers et administrateurs ; les autres restent sur le site public. */
+/** Espace de gestion : managers, administrateurs et coachs ; les autres restent sur le site public. */
 export const staffGuard: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
   if (!auth.isLoggedIn()) {
     return inject(Router).createUrlTree(['/connexion'], { queryParams: { retour: state.url } });
   }
-  return auth.canOrganize() || inject(Router).createUrlTree(['/']);
+  return auth.hasSpace() || inject(Router).createUrlTree(['/']);
+};
+
+/** Création de compétitions et d'équipes : managers et administrateurs (pas les coachs). */
+export const organizerGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.canOrganize() || inject(Router).createUrlTree(['/gestion']);
 };
 
 export const guestGuard: CanActivateFn = () => {

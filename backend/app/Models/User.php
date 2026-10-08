@@ -88,6 +88,17 @@ class User extends Authenticatable
         return $this->hasMany(Team::class, 'owner_id');
     }
 
+    /** Équipes dont l'utilisateur est le coach. */
+    public function coachedTeams(): HasMany
+    {
+        return $this->hasMany(Team::class, 'coach_id');
+    }
+
+    public function isCoach(): bool
+    {
+        return $this->coachedTeams()->exists();
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(CompetitionDocument::class);

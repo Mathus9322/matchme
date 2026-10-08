@@ -11,7 +11,9 @@ class Player extends Model
 {
     use HasImage;
 
-    protected $fillable = ['team_id', 'name', 'position'];
+    protected $fillable = ['team_id', 'name', 'position', 'is_captain'];
+
+    protected $casts = ['is_captain' => 'boolean'];
 
     protected function imageColumn(): string
     {

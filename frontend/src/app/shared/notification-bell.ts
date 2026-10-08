@@ -104,7 +104,7 @@ export class NotificationBell {
     this.open.set(false);
     if (n.url) {
       // Les managers suivent leurs matchs depuis l'espace de gestion.
-      this.router.navigateByUrl(this.auth.canOrganize() ? '/gestion' + n.url : n.url);
+      this.router.navigateByUrl(this.auth.hasSpace() ? '/gestion' + n.url : n.url);
     }
   }
 

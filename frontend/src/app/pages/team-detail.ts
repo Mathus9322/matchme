@@ -2,18 +2,19 @@ import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import { AreaService } from '../core/area.service';
-import { AuthService } from '../core/auth.service';
 import { COMPETITION_STATUS_LABELS, TeamStats } from '../core/models';
 import { Avatar } from '../shared/avatar';
 import { GameRow } from '../shared/game-row';
+import { BackButton } from '../shared/back-button';
 import { Icon } from '../shared/icon';
 import { PlayerStatsModal } from '../shared/player-stats-modal';
 
 /** Fiche publique d'une équipe : bilan, effectif et statistiques des joueurs. */
 @Component({
   selector: 'app-team-detail',
-  imports: [RouterLink, Avatar, GameRow, Icon, PlayerStatsModal],
+  imports: [BackButton, RouterLink, Avatar, GameRow, Icon, PlayerStatsModal],
   template: `
+    <app-back-button [fallback]="area.link('equipes')" />
     @if (stats(); as s) {
       <section class="hero">
         <app-avatar [src]="s.team.logo_url" [name]="s.team.name" [size]="112" shape="square" />
@@ -21,6 +22,9 @@ import { PlayerStatsModal } from '../shared/player-stats-modal';
           <p class="eyebrow">Fiche équipe{{ s.team.city ? ' · ' + s.team.city : '' }}</p>
           <h1 class="page-title">{{ s.team.name }}</h1>
           <div class="row" style="margin-top: 12px">
+            @if (s.team.coach; as c) {
+              <span class="row small muted"><app-avatar [src]="c.avatar_url" [name]="c.name" [size]="26" /> Coach <strong style="color: var(--ink)">{{ c.name }}</strong></span>
+            }
             @if (s.team.owner; as o) {
               <span class="row small muted"><app-avatar [src]="o.avatar_url" [name]="o.name" [size]="26" /> Manager <strong style="color: var(--ink)">{{ o.name }}</strong></span>
             }
@@ -61,7 +65,7 @@ import { PlayerStatsModal } from '../shared/player-stats-modal';
                     <td>
                       <span class="who">
                         <app-avatar [src]="p.photo_url" [name]="p.name" [size]="36" />
-                        <span><strong>{{ p.name }}</strong>@if (s.top_scorer?.id === p.id) { <span class="badge top"><app-icon name="star" [size]="11" /> Meilleur marqueur</span> }</span>
+                        <span><strong>{{ p.name }}</strong>@if (p.is_captain) { <span class="captain" title="Capitaine">C</span> }@if (s.top_scorer?.id === p.id) { <span class="badge top"><app-icon name="star" [size]="11" /> Meilleur marqueur</span> }</span>
                       </span>
                     </td>
                     <td class="num">{{ p.appearances }}</td>
@@ -152,7 +156,6 @@ import { PlayerStatsModal } from '../shared/player-stats-modal';
 export class TeamDetailPage implements OnInit {
   private readonly api = inject(ApiService);
   protected readonly area = inject(AreaService);
-  private readonly auth = inject(AuthService);
   readonly id = input.required<string>();
   protected readonly stats = signal<TeamStats | null>(null);
   protected readonly notFound = signal(false);
@@ -164,7 +167,6 @@ export class TeamDetailPage implements OnInit {
   }
 
   protected canEdit(): boolean {
-    const user = this.auth.user();
-    return !!user && this.auth.canOrganize() && (user.role === 'admin' || this.stats()?.team.owner?.id === user.id);
+    return !!this.stats()?.team.can_manage;
   }
 }

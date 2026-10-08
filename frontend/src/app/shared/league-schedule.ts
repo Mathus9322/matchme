@@ -4,6 +4,7 @@ import { ApiService, errorMessage } from '../core/api.service';
 import { fromLocalInput } from '../core/dates';
 import { Competition } from '../core/models';
 import { Icon } from './icon';
+import { DialogService } from './dialog';
 
 /** Section « Championnat » : génération du calendrier par journées. */
 @Component({
@@ -57,6 +58,7 @@ import { Icon } from './icon';
   `,
 })
 export class LeagueSchedule {
+  private readonly dialog = inject(DialogService);
   private readonly api = inject(ApiService);
   readonly competition = input.required<Competition>();
   readonly changed = output<void>();
@@ -73,9 +75,9 @@ export class LeagueSchedule {
   protected readonly played = computed(() => this.leagueGames().filter((g) => g.status === 'finished').length);
   protected readonly rounds = computed(() => new Set(this.leagueGames().map((g) => g.round)).size);
 
-  protected generate(): void {
+  protected async generate(): Promise<void> {
     const replace = this.total() > 0;
-    if (replace && !confirm('Remplacer le calendrier actuel ? Les matchs programmés seront recréés.')) {
+    if (replace && !(await this.dialog.confirm('Les matchs programmés seront recréés.', { title: 'Remplacer le calendrier actuel ?', confirmLabel: 'Remplacer' }))) {
       return;
     }
     this.busy.set(true);

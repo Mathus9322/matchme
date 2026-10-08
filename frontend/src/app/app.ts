@@ -3,17 +3,20 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AreaService } from './core/area.service';
 import { AuthService } from './core/auth.service';
 import { Avatar } from './shared/avatar';
+import { DialogHost } from './shared/dialog';
 import { Icon } from './shared/icon';
 
 @Component({
   selector: 'app-root',
-  imports: [Icon, RouterOutlet, RouterLink, RouterLinkActive, Avatar],
+  imports: [Icon, RouterOutlet, RouterLink, RouterLinkActive, Avatar, DialogHost],
   template: `
-    @if (area.inManage()) {
+    @if (area.bare()) {
+      <router-outlet />
+    } @else if (area.inManage()) {
       <!-- Espace de gestion : sa propre mise en page (menu latéral). -->
       <router-outlet />
     } @else {
-      @if (auth.canOrganize()) {
+      @if (auth.hasSpace()) {
         <div class="portal-bar">
           <span><app-icon name="eye" [size]="15" /> Vous consultez la <strong>vue publique</strong> du site.</span>
           <a routerLink="/gestion"><app-icon name="arrow-left" [size]="14" /> Retour à l’espace gestion</a>
@@ -25,12 +28,13 @@ import { Icon } from './shared/icon';
           <button class="menu-toggle" type="button" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-label="Menu"><app-icon name="menu" [size]="20" /></button>
           <nav class="nav" [class.open]="menuOpen()" (click)="menuOpen.set(false)">
             <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Direct</a>
+            <a routerLink="/regarder" routerLinkActive="active"><app-icon name="eye" [size]="14" /> Code match</a>
             <a routerLink="/competitions" routerLinkActive="active">Compétitions</a>
             <a routerLink="/equipes" routerLinkActive="active">Équipes</a>
             <a routerLink="/a-propos" routerLinkActive="active">À propos</a>
             <span class="nav-spacer"></span>
             @if (auth.user(); as user) {
-              @if (auth.canOrganize()) {
+              @if (auth.hasSpace()) {
                 <a class="btn btn-sm" routerLink="/gestion"><app-icon name="layout-grid" [size]="14" /> Espace gestion</a>
               }
               <a class="nav-user" routerLink="/profil" [title]="'Mon profil · ' + user.email">
@@ -55,6 +59,8 @@ import { Icon } from './shared/icon';
         </footer>
       </div>
     }
+    <!-- Confirmations de l'application (remplacent confirm() du navigateur). -->
+    <app-dialog-host />
   `,
 })
 export class App {

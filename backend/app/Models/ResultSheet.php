@@ -34,7 +34,7 @@ class ResultSheet extends Model
             return null;
         }
 
-        $game->load(['competition.rubrics', 'competition.owner', 'group', 'teamA.players', 'teamB.players', 'events.player', 'events.rubric', 'sheet', 'substitutions.playerIn', 'substitutions.playerOut']);
+        $game->load(['competition.rubrics', 'competition.owner', 'group', 'teamA.players', 'teamB.players', 'events.player', 'events.rubric', 'sheet', 'substitutions.playerIn', 'substitutions.playerOut', 'questions']);
         $rubrics = $game->competition->rubrics;
         $title = "{$game->teamA->name} – {$game->teamB->name}";
 
@@ -84,6 +84,18 @@ class ResultSheet extends Model
                 'rubric' => $e->rubric?->name,
                 'points' => $e->points,
             ])->values()->all(),
+            // Questions effectivement posées, avec leur réponse et les joueurs qui ont répondu.
+            'questions' => $game->questions->filter->isVisible()->values()->map(fn ($q) => [
+                'position' => $q->position,
+                'rubric' => $q->rubric,
+                'question' => $q->question,
+                'answer' => $q->answer,
+                'answered' => $game->events->where('question_id', $q->id)->sortBy('id')->values()->map(fn ($e) => [
+                    'player' => $e->player?->name,
+                    'team' => $e->team_id === $game->team_a_id ? 'a' : 'b',
+                    'points' => $e->points,
+                ])->all(),
+            ])->all(),
             'generated_at' => now()->toIso8601String(),
         ];
 

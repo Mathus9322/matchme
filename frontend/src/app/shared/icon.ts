@@ -1,9 +1,9 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import {
-  AlarmClock, ArrowDown, ArrowLeft, ArrowLeftRight, ArrowRight, ArrowUp, ArrowUpRight, Bell, Camera, Check, Coffee, Dices, Download, FileText, Eye, Flag, Folder,
-  FolderOpen, GripVertical, IconNode, LogOut, UserRound, LayoutGrid, Medal, Menu, Pencil, PencilLine, Play, Plus, RotateCcw, Rocket, Shield, Square, Star, TriangleAlert,
-  Trophy, Undo2, Upload, Users, X, Zap,
+  AlarmClock, ArrowDown, ArrowLeft, ArrowLeftRight, ArrowRight, ArrowUp, ArrowUpRight, Bell, BellOff, Camera, Check, Coffee, Dices, Download, FileText, Eye, Flag, Folder,
+  FolderOpen, GripVertical, IconNode, Lock, LogOut, UserRound, LayoutGrid, Medal, Menu, Pencil, PencilLine, Play, Plus, RotateCcw, Rocket, Shield, Square, Star, TriangleAlert,
+  Trophy, Undo2, Upload, UserCog, Users, X, Zap,
 } from 'lucide';
 
 /** Icônes Lucide disponibles dans l'application, par nom. */
@@ -16,6 +16,7 @@ const ICONS = {
   'arrow-up': ArrowUp,
   'arrow-up-right': ArrowUpRight,
   bell: Bell,
+  'bell-off': BellOff,
   camera: Camera,
   check: Check,
   coffee: Coffee,
@@ -28,6 +29,7 @@ const ICONS = {
   'folder-open': FolderOpen,
   'grip-vertical': GripVertical,
   'layout-grid': LayoutGrid,
+  lock: Lock,
   'log-out': LogOut,
   'user-round': UserRound,
   medal: Medal,
@@ -45,6 +47,7 @@ const ICONS = {
   trophy: Trophy,
   'undo-2': Undo2,
   upload: Upload,
+  'user-cog': UserCog,
   users: Users,
   x: X,
   zap: Zap,

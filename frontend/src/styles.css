@@ -55,7 +55,7 @@ h1, h2, h3 { margin: 0; }
 .nav-user { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px !important; border-radius: 999px !important; color: var(--ink) !important; font-size: 12px; font-weight: 600; text-decoration: none; }
 .nav-user:hover { background: rgba(190, 189, 177, .25); }
 .menu-toggle { display: none; margin-left: auto; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; }
-.content { flex: 1; padding: 36px 0 24px; animation: arrive .4s ease both; }
+.content { flex: 1; padding: 36px 0 24px; animation: arrive .4s ease backwards; }
 .page-footer { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: 9px; }
 .page-footer i { color: var(--rust); font-style: normal; }
 .page-footer a { color: inherit; text-decoration: none; }
@@ -154,6 +154,7 @@ td .input { min-height: 34px; padding: 5px 9px; }
 .stat-accent { border-color: var(--rust); background: var(--rust); color: white; }
 .stat-accent span { color: rgba(255, 255, 255, .85); }
 
+/* « backwards » et non « both » : une transformation conservée ferait de la page le repère des éléments fixes (pop-ups). */
 @keyframes arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(172, 99, 39, 0); } }
 
@@ -218,3 +219,9 @@ td .input { min-height: 34px; padding: 5px 9px; }
 .portal-bar span { display: inline-flex; align-items: center; gap: 6px; }
 .portal-bar a { display: inline-flex; align-items: center; gap: 6px; color: var(--gold); font-weight: 700; text-decoration: none; }
 .portal-bar a:hover { color: var(--gold-light); }
+
+/* Capitaine d'équipe : pastille « C » à côté du nom. */
+.captain { display: inline-grid; place-items: center; width: 17px; height: 17px; margin-left: 6px; border-radius: 50%; background: var(--ink); color: var(--gold-light); font-family: var(--mono); font-size: 10px; font-weight: 700; line-height: 1; vertical-align: middle; }
+.captain-pick { width: 30px; height: 30px; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--muted); font-family: var(--mono); font-size: 11px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.captain-pick:hover { border-color: var(--ink); color: var(--ink); }
+.captain-pick.active { border-color: var(--ink); background: var(--ink); color: var(--gold-light); }

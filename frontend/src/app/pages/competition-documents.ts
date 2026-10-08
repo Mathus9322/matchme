@@ -6,6 +6,7 @@ import { AuthService } from '../core/auth.service';
 import { CompetitionDocument, DocumentFolder, ResultSheetSummary } from '../core/models';
 import { ScoreSheetModal } from '../shared/score-sheet-modal';
 import { Icon } from '../shared/icon';
+import { DialogService } from '../shared/dialog';
 
 @Component({
   selector: 'app-competition-documents',
@@ -111,6 +112,7 @@ import { Icon } from '../shared/icon';
   `,
 })
 export class CompetitionDocumentsPage implements OnInit {
+  private readonly dialog = inject(DialogService);
   private readonly api = inject(ApiService);
   protected readonly auth = inject(AuthService);
   readonly id = input.required<string>();
@@ -153,8 +155,8 @@ export class CompetitionDocumentsPage implements OnInit {
     });
   }
 
-  protected remove(doc: CompetitionDocument): void {
-    if (confirm(`Supprimer « ${doc.name} » ?`)) {
+  protected async remove(doc: CompetitionDocument): Promise<void> {
+    if (await this.dialog.confirm(`Supprimer « ${doc.name} » ?`, { confirmLabel: 'Supprimer', danger: true })) {
       this.api.deleteDocument(doc.id).subscribe({
         next: () => {
           this.message.set({ text: 'Document supprimé.', ok: true });

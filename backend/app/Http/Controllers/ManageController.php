@@ -16,10 +16,11 @@ class ManageController extends Controller
     public function overview(Request $request): JsonResponse
     {
         $user = $request->user();
+        abort_unless($user->canOrganize() || $user->isCoach(), 403, 'Accès réservé aux managers, coachs et administrateurs.');
         $all = $user->isAdmin();
 
         $competitions = Competition::query()->unless($all, fn ($q) => $q->where('owner_id', $user->id));
-        $teams = Team::query()->unless($all, fn ($q) => $q->where('owner_id', $user->id));
+        $teams = Team::query()->unless($all, fn ($q) => $q->managedBy($user));
         $teamIds = (clone $teams)->pluck('id');
 
         // Matchs qui me concernent : mes compétitions, mes amicaux, ou ceux de mes équipes.

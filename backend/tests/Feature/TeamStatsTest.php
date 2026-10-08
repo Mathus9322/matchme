@@ -24,7 +24,7 @@ class TeamStatsTest extends TestCase
 
         // Match 1 : victoire ; le remplaçant 5 entre à la mi-temps et marque, le 6 reste sur le banc.
         $first = $competition->games()->create(['team_a_id' => $home->id, 'team_b_id' => $away->id, 'round' => 'J1']);
-        $this->postJson("/api/games/{$first->id}/start");
+        $this->postJson("/api/games/{$first->id}/start", ['uses_buzzer' => false]);
         $this->postJson("/api/games/{$first->id}/events", ['team_id' => $home->id, 'player_id' => $p[0], 'rubric_id' => $rubric->id, 'points' => 20]);
         $this->postJson("/api/games/{$first->id}/events", ['team_id' => $home->id, 'player_id' => $p[0], 'rubric_id' => $rubric->id, 'points' => -10]);
         $this->postJson("/api/games/{$first->id}/halftime");
@@ -35,7 +35,7 @@ class TeamStatsTest extends TestCase
 
         // Match 2 : défaite.
         $second = $competition->games()->create(['team_a_id' => $away->id, 'team_b_id' => $home->id, 'round' => 'J2']);
-        $this->postJson("/api/games/{$second->id}/start");
+        $this->postJson("/api/games/{$second->id}/start", ['uses_buzzer' => false]);
         $this->postJson("/api/games/{$second->id}/events", ['team_id' => $away->id, 'rubric_id' => $rubric->id, 'points' => 20]);
         $this->toSecondHalf($second->id);
         $this->postJson("/api/games/{$second->id}/finish");
@@ -70,5 +70,22 @@ class TeamStatsTest extends TestCase
             ->assertJsonPath('data.matches.1.points', 10);
 
         $this->getJson("/api/players/{$p[5]}/stats")->assertJsonCount(0, 'data.matches');
+
+        // Match amical entre les mêmes équipes : stats et face-à-face importés.
+        Sanctum::actingAs($manager);
+        $friendly = $this->postJson('/api/games/friendly', ['team_a' => ['id' => $home->id], 'team_b' => ['id' => $away->id]])->json('data.id');
+        $this->app['auth']->forgetGuards();
+        $this->getJson("/api/games/{$friendly}/matchup")->assertOk()
+            ->assertJsonPath('data.team_a.name', 'Gaïndé')
+            ->assertJsonPath('data.team_a.record.played', 2)
+            ->assertJsonPath('data.team_a.record.friendlies', 0)
+            ->assertJsonPath('data.team_a.form', ['D', 'V'])
+            ->assertJsonPath('data.team_a.players.0.id', $p[0])
+            ->assertJsonPath('data.team_b.record.won', 1)
+            ->assertJsonPath('data.head_to_head.played', 2)
+            ->assertJsonPath('data.head_to_head.wins_a', 1)
+            ->assertJsonPath('data.head_to_head.wins_b', 1)
+            ->assertJsonPath('data.head_to_head.draws', 0)
+            ->assertJsonCount(2, 'data.head_to_head.meetings');
     }
 }

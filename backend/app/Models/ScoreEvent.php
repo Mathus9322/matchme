@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ScoreEvent extends Model
 {
-    protected $fillable = ['game_id', 'team_id', 'player_id', 'rubric_id', 'user_id', 'points'];
+    protected $fillable = ['game_id', 'team_id', 'player_id', 'rubric_id', 'question_id', 'user_id', 'points'];
 
     public function game(): BelongsTo
     {

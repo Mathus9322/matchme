@@ -18,20 +18,26 @@ interface Overview {
   selector: 'app-dashboard',
   imports: [RouterLink, GameRow, Icon],
   template: `
-    <p class="eyebrow">{{ auth.isAdmin() ? 'Administration' : 'Espace manager' }}</p>
+    <p class="eyebrow">{{ auth.isAdmin() ? 'Administration' : auth.canOrganize() ? 'Espace manager' : 'Espace coach' }}</p>
     <h1 class="page-title">Bonjour, <em>{{ firstName() }}</em></h1>
-    <p class="lead">{{ auth.isAdmin() ? 'Vue d’ensemble de toute la plateforme.' : 'Vos compétitions, vos équipes et vos matchs en un coup d’œil.' }}</p>
+    <p class="lead">{{ auth.isAdmin() ? 'Vue d’ensemble de toute la plateforme.' : auth.canOrganize() ? 'Vos compétitions, vos équipes et vos matchs en un coup d’œil.' : 'Vos équipes, leurs effectifs et vos matchs amicaux.' }}</p>
 
     <div class="actions">
-      <a class="action" routerLink="/gestion/competitions/nouvelle"><app-icon name="trophy" [size]="20" /> <span><strong>Nouvelle compétition</strong><span>Poules ou championnat</span></span></a>
-      <a class="action" routerLink="/gestion/equipes/nouvelle"><app-icon name="users" [size]="20" /> <span><strong>Nouvelle équipe</strong><span>Joueurs, logo, photos</span></span></a>
-      <a class="action" routerLink="/gestion/amical"><app-icon name="zap" [size]="20" /> <span><strong>Match amical</strong><span>Hors compétition</span></span></a>
+      @if (auth.canOrganize()) {
+        <a class="action" routerLink="/gestion/competitions/nouvelle"><app-icon name="trophy" [size]="20" /> <span><strong>Nouvelle compétition</strong><span>Poules ou championnat</span></span></a>
+        <a class="action" routerLink="/gestion/equipes/nouvelle"><app-icon name="users" [size]="20" /> <span><strong>Nouvelle équipe</strong><span>Joueurs, logo, coach</span></span></a>
+      } @else {
+        <a class="action" routerLink="/gestion/equipes"><app-icon name="users" [size]="20" /> <span><strong>Mes équipes</strong><span>Ajouter ou retirer des joueurs</span></span></a>
+      }
+      <a class="action" routerLink="/gestion/amical"><app-icon name="zap" [size]="20" /> <span><strong>Match amical</strong><span>{{ auth.isCoach() ? 'Défier un autre coach' : 'Hors compétition' }}</span></span></a>
     </div>
 
     @if (data(); as d) {
       <div class="stats">
         <div class="stat stat-accent"><strong>{{ d.stats.live_games }}</strong><span>Matchs en direct</span></div>
-        <a class="stat" routerLink="/gestion/competitions"><strong>{{ d.stats.competitions }}</strong><span>Compétitions · {{ d.stats.ongoing_competitions }} en cours</span></a>
+        @if (auth.canOrganize()) {
+          <a class="stat" routerLink="/gestion/competitions"><strong>{{ d.stats.competitions }}</strong><span>Compétitions · {{ d.stats.ongoing_competitions }} en cours</span></a>
+        }
         <a class="stat" routerLink="/gestion/equipes"><strong>{{ d.stats.teams }}</strong><span>Équipes</span></a>
         <div class="stat"><strong>{{ d.stats.scheduled_games }}</strong><span>Matchs à jouer</span></div>
         <div class="stat"><strong>{{ d.stats.finished_games }}</strong><span>Matchs terminés</span></div>

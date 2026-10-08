@@ -6,7 +6,7 @@ import { Avatar } from '../../shared/avatar';
 import { Icon, IconName } from '../../shared/icon';
 import { NotificationBell } from '../../shared/notification-bell';
 
-/** Espace de gestion (managers et administrateurs) : menu latéral et portail vers la vue publique. */
+/** Espace de gestion (managers, coachs et administrateurs) : menu latéral et portail vers la vue publique. */
 @Component({
   selector: 'app-manage-layout',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Avatar, Icon, NotificationBell],
@@ -34,7 +34,7 @@ import { NotificationBell } from '../../shared/notification-bell';
           <div class="me">
             <a routerLink="/gestion/profil" class="me-link">
               <app-avatar [src]="u.avatar_url" [name]="u.name" [size]="36" />
-              <span><strong>{{ u.name }}</strong><span class="role">{{ roles[u.role] }}</span></span>
+              <span><strong>{{ u.name }}</strong><span class="role">{{ roles[u.role] }}{{ u.is_coach ? ' · Coach' : '' }}</span></span>
             </a>
             <button class="logout" type="button" (click)="auth.logout()" title="Déconnexion" aria-label="Déconnexion"><app-icon name="log-out" [size]="16" /></button>
           </div>
@@ -77,7 +77,7 @@ import { NotificationBell } from '../../shared/notification-bell';
     .logout:hover { border-color: var(--rust); color: #f0a473; }
     .main { min-width: 0; background: var(--paper); }
     .main-top { display: flex; justify-content: flex-end; align-items: center; gap: 10px; height: 64px; padding: 0 clamp(16px, 3vw, 48px); border-bottom: 1px solid var(--line); }
-    .main-content { padding: 28px clamp(16px, 3vw, 48px) 48px; animation: arrive .35s ease both; }
+    .main-content { padding: 28px clamp(16px, 3vw, 48px) 48px; animation: arrive .35s ease backwards; }
     @media (max-width: 900px) {
       .manage { grid-template-columns: 1fr; }
       .side { position: relative; height: auto; gap: 0; padding: 14px 16px; }
@@ -102,8 +102,9 @@ export class ManageLayout {
   protected items(): { link: string; label: string; icon: IconName; exact?: boolean }[] {
     return [
       { link: '/gestion', label: 'Tableau de bord', icon: 'layout-grid', exact: true },
-      { link: '/gestion/competitions', label: this.auth.isAdmin() ? 'Compétitions' : 'Mes compétitions', icon: 'trophy' },
+      ...(this.auth.canOrganize() ? [{ link: '/gestion/competitions', label: this.auth.isAdmin() ? 'Compétitions' : 'Mes compétitions', icon: 'trophy' as IconName }] : []),
       { link: '/gestion/equipes', label: this.auth.isAdmin() ? 'Équipes' : 'Mes équipes', icon: 'users' },
+      ...(this.auth.canOrganize() ? [{ link: '/gestion/utilisateurs', label: 'Mes coachs', icon: 'user-cog' as IconName }] : []),
       { link: '/gestion/amical', label: 'Matchs amicaux', icon: 'zap' },
       ...(this.auth.isAdmin() ? [{ link: '/gestion/admin', label: 'Administration', icon: 'shield' as IconName }] : []),
       { link: '/gestion/profil', label: 'Mon profil', icon: 'user-round' as IconName },

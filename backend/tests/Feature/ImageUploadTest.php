@@ -97,7 +97,7 @@ class ImageUploadTest extends TestCase
         $this->assertCount(2, Storage::disk('public')->allFiles());
 
         // Retirer le joueur de l'effectif supprime sa photo, supprimer l'équipe supprime le logo.
-        $this->putJson("/api/teams/{$team->id}", ['name' => 'Gaïndé', 'players' => [['name' => 'N1'], ['name' => 'N2'], ['name' => 'N3'], ['name' => 'N4']]])->assertOk();
+        $this->putJson("/api/teams/{$team->id}", ['name' => 'Gaïndé', 'players' => [['name' => 'N1'], ['name' => 'N2'], ['name' => 'N3'], ['name' => 'N4']], 'captain' => 0])->assertOk();
         $this->assertCount(0, Storage::disk('public')->allFiles('players'));
         $this->deleteJson("/api/teams/{$team->id}")->assertNoContent();
         $this->assertCount(0, Storage::disk('public')->allFiles());

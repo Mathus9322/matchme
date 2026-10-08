@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiService, errorMessage } from '../core/api.service';
 import { Competition, GroupStanding } from '../core/models';
 import { Icon } from './icon';
+import { DialogService } from './dialog';
 
 /** Section « Poules » d'une compétition : tirage, gestion et classements par poule. */
 @Component({
@@ -92,6 +93,7 @@ import { Icon } from './icon';
   `,
 })
 export class CompetitionGroups {
+  private readonly dialog = inject(DialogService);
   protected readonly api = inject(ApiService);
   readonly competition = input.required<Competition>();
   readonly groups = input.required<GroupStanding[]>();
@@ -109,12 +111,12 @@ export class CompetitionGroups {
     return name.replace(/^Poule\s+/i, '').slice(0, 2) || '?';
   }
 
-  protected draw(): void {
+  protected async draw(): Promise<void> {
     const hasGroupGames = this.competition().games?.some((g) => g.group);
     const warning = this.groups().length
       ? `Refaire le tirage en ${this.count} poules ? Les poules actuelles${hasGroupGames ? ' et leurs matchs non joués' : ''} seront remplacées.`
       : `Répartir les équipes au hasard dans ${this.count} poules ?`;
-    if (confirm(warning)) {
+    if (await this.dialog.confirm(warning, { confirmLabel: 'Lancer le tirage' })) {
       this.run(this.api.drawGroups(this.competition().id, this.count), 'Tirage effectué.');
     }
   }
@@ -127,15 +129,15 @@ export class CompetitionGroups {
     });
   }
 
-  protected rename(group: GroupStanding): void {
-    const name = prompt('Nouveau nom de la poule', group.name)?.trim();
+  protected async rename(group: GroupStanding): Promise<void> {
+    const name = (await this.dialog.prompt('Nouveau nom de la poule', group.name, { confirmLabel: 'Renommer' }))?.trim();
     if (name && name !== group.name) {
       this.run(this.api.renameGroup(group.id, name));
     }
   }
 
-  protected remove(group: GroupStanding): void {
-    if (confirm(`Supprimer la ${group.name} ? Ses équipes et ses matchs restent dans la compétition.`)) {
+  protected async remove(group: GroupStanding): Promise<void> {
+    if (await this.dialog.confirm('Ses équipes et ses matchs restent dans la compétition.', { title: `Supprimer la ${group.name} ?`, confirmLabel: 'Supprimer', danger: true })) {
       this.run(this.api.deleteGroup(group.id), 'Poule supprimée.');
     }
   }

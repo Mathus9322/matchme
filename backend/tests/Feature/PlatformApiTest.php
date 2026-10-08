@@ -36,11 +36,11 @@ class PlatformApiTest extends TestCase
 
     public function test_full_competition_flow_with_live_scoring(): void
     {
-        Sanctum::actingAs(User::factory()->manager()->create());
+        $manager = Sanctum::actingAs(User::factory()->manager()->create());
 
-        $teamA = $this->postJson('/api/teams', ['name' => 'Les Lynx', 'players' => [['name' => 'Alice'], ['name' => 'Bob'], ['name' => 'Chloé'], ['name' => 'David']]])
+        $teamA = $this->postJson('/api/teams', ['name' => 'Les Lynx', 'coach_id' => $manager->id, 'players' => [['name' => 'Alice'], ['name' => 'Bob'], ['name' => 'Chloé'], ['name' => 'David']], 'captain' => 0])
             ->assertCreated()->assertJsonCount(4, 'data.players')->json('data');
-        $teamB = $this->postJson('/api/teams', ['name' => 'Les Comètes', 'players' => [['name' => 'Emma'], ['name' => 'Farid'], ['name' => 'Gaël'], ['name' => 'Hana']]])->json('data');
+        $teamB = $this->postJson('/api/teams', ['name' => 'Les Comètes', 'coach_id' => $manager->id, 'players' => [['name' => 'Emma'], ['name' => 'Farid'], ['name' => 'Gaël'], ['name' => 'Hana']], 'captain' => 0])->json('data');
 
         $competitionId = $this->postJson('/api/competitions', ['name' => 'Coupe', 'status' => 'open'])
             ->assertCreated()->json('data.id');
@@ -54,7 +54,7 @@ class PlatformApiTest extends TestCase
         ])->assertCreated()->assertJsonPath('data.status', 'scheduled')->json('data.id');
 
         $this->postJson("/api/games/{$gameId}/events", ['team_id' => $teamA['id'], 'points' => 10])->assertUnprocessable();
-        $this->postJson("/api/games/{$gameId}/start")->assertOk()->assertJsonPath('data.status', 'live');
+        $this->postJson("/api/games/{$gameId}/start", ['uses_buzzer' => false])->assertOk()->assertJsonPath('data.status', 'live');
 
         $alice = $teamA['players'][0]['id'];
         $this->postJson("/api/games/{$gameId}/events", ['team_id' => $teamA['id'], 'player_id' => $alice, 'points' => 40])->assertOk();
@@ -154,17 +154,26 @@ class PlatformApiTest extends TestCase
 
     public function test_updating_a_team_syncs_its_players(): void
     {
-        Sanctum::actingAs(User::factory()->manager()->create());
-        $team = $this->postJson('/api/teams', ['name' => 'Lynx', 'players' => [['name' => 'Alice'], ['name' => 'Bob'], ['name' => 'Chloé'], ['name' => 'David']]])->json('data');
+        $manager = Sanctum::actingAs(User::factory()->manager()->create());
+        $team = $this->postJson('/api/teams', ['name' => 'Lynx', 'coach_id' => $manager->id, 'players' => [['name' => 'Alice'], ['name' => 'Bob'], ['name' => 'Chloé'], ['name' => 'David']], 'captain' => 0])->json('data');
 
         $this->putJson("/api/teams/{$team['id']}", [
             'name' => 'Lynx',
             'players' => [['id' => $team['players'][1]['id'], 'name' => 'Bobby'], ['name' => 'Eva'], ['name' => 'Fatou'], ['name' => 'Gora']],
+            'captain' => 2,
         ])
             ->assertJsonCount(4, 'data.players')
+            ->assertJsonPath('data.players.0.is_captain', false)
+            ->assertJsonPath('data.players.2.is_captain', true)
             ->assertJsonPath('data.players.0.id', $team['players'][1]['id'])
             ->assertJsonPath('data.players.0.name', 'Bobby')
             ->assertJsonPath('data.players.1.name', 'Eva');
+
+        // Chaque équipe doit avoir un capitaine parmi ses joueurs.
+        $this->putJson("/api/teams/{$team['id']}", ['name' => 'Lynx', 'players' => [['name' => 'a'], ['name' => 'b'], ['name' => 'c'], ['name' => 'd']]])
+            ->assertJsonValidationErrors('captain');
+        $this->putJson("/api/teams/{$team['id']}", ['name' => 'Lynx', 'players' => [['name' => 'a'], ['name' => 'b'], ['name' => 'c'], ['name' => 'd']], 'captain' => 4])
+            ->assertJsonValidationErrors('captain');
     }
 
     public function test_only_managers_and_admins_can_create_competitions(): void

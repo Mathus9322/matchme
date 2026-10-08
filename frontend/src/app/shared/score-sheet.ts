@@ -76,6 +76,28 @@ import { Avatar } from './avatar';
         </section>
       }
 
+      @if (s.questions?.length) {
+        <section>
+          <h3 class="h">Questions et réponses ({{ s.questions!.length }})</h3>
+          <table class="qa">
+            <thead><tr><th>#</th><th>Question</th><th>Réponse</th><th>Répondu par</th></tr></thead>
+            <tbody>
+              @for (q of s.questions; track $index) {
+                <tr>
+                  <td class="qn">{{ q.position }}</td>
+                  <td>@if (q.rubric) { <span class="qr">{{ q.rubric }}</span> }{{ q.question }}</td>
+                  <td><strong>{{ q.answer ?? '—' }}</strong></td>
+                  <td class="qw">
+                    @for (a of q.answered; track $index) { {{ a.player ?? 'Équipe' }} ({{ a.team === 'a' ? s.team_a.name : s.team_b.name }}, {{ a.points > 0 ? '+' : '' }}{{ a.points }}){{ $last ? '' : ' · ' }} }
+                    @if (!q.answered.length) { <span class="muted">—</span> }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+
       <section>
         <h3 class="h">Déroulé des points ({{ s.events.length }})</h3>
         @if (s.events.length) {
@@ -135,6 +157,10 @@ import { Avatar } from './avatar';
     .sub td { color: #6b6558; }
     .total td { border-top: 2px solid #2b2219; font-weight: 700; }
     .subs { margin: 6px 0 0; color: #8a6017; font-size: 11px; }
+    .qa td { vertical-align: top; font-size: 11px; }
+    .qn { width: 22px; color: #6b6558; font-family: 'DejaVu Sans Mono', monospace; }
+    .qr { display: block; color: #8a6017; font-size: 9px; text-transform: uppercase; }
+    .qw { width: 34%; color: #4a4339; }
     .events { columns: 2; column-gap: 24px; margin: 0; padding: 0; list-style: none; }
     .events li { display: grid; grid-template-columns: 38px 1fr auto; gap: 6px; padding: 3px 0; border-bottom: 1px dotted #dddbd0; break-inside: avoid; font-size: 11px; }
     .t { color: #6b6558; font-family: 'DejaVu Sans Mono', monospace; }

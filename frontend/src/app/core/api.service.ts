@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
-import { AppNotification, Competition, PlayerStats, TeamStats, ResultSheet, ResultSheetSummary, CompetitionFormat, CompetitionStatus, Rubric, Scale, DocumentFolder, Game, GameStatus, Group, GroupStanding, PlayerRef, Stats, Standing, Team, User } from './models';
+import { AppNotification, BuzzerJoin, BuzzerPlayerState, BuzzerRefereeState, Competition, FriendlyRequest, ManagedUser, ManagedUsers, Owner, Matchup, PlayerStats, TeamStats, ResultSheet, ResultSheetSummary, CompetitionFormat, CompetitionStatus, Rubric, Scale, DocumentFolder, Game, GameStatus, Group, GroupStanding, PlayerRef, Stats, Standing, Team, User } from './models';
 
 interface Data<T> {
   data: T;
@@ -10,7 +10,10 @@ interface Data<T> {
 export interface TeamPayload {
   name: string;
   city: string | null;
+  coach_id?: number;
   players: PlayerRef[];
+  /** Indice du capitaine dans `players`. */
+  captain: number;
 }
 
 export interface CompetitionPayload {
@@ -37,7 +40,15 @@ export interface GamePayload {
 }
 
 /** Un côté d'un match amical : une équipe existante (id) ou une équipe rapide (nom + joueurs). */
-export type FriendlySide = { id: number } | { name: string; players: string[] };
+export type FriendlySide = { id: number; starters?: number[]; substitutes?: number[] } | { name: string; players: string[]; captain?: number };
+
+export interface FriendlyRequestPayload {
+  team_id: number;
+  opponent_id: number;
+  round: string | null;
+  scheduled_at: string | null;
+  message: string | null;
+}
 
 export interface FriendlyPayload {
   team_a: FriendlySide;
@@ -45,6 +56,15 @@ export interface FriendlyPayload {
   round: string | null;
   scheduled_at: string | null;
   start: boolean;
+  /** Obligatoire quand le match démarre tout de suite. */
+  uses_buzzer?: boolean;
+}
+
+export interface QuestionPayload {
+  question: string;
+  answer: string | null;
+  rubric: string | null;
+  points: number | null;
 }
 
 export interface UserPayload {
@@ -233,6 +253,9 @@ export class ApiService {
   team(id: number) {
     return this.get<Team>(`/api/teams/${id}`);
   }
+  matchup(gameId: number) {
+    return this.get<Matchup>(`/api/games/${gameId}/matchup`);
+  }
   teamStats(id: number) {
     return this.get<TeamStats>(`/api/teams/${id}/stats`);
   }
@@ -268,16 +291,41 @@ export class ApiService {
   deleteGame(id: number) {
     return this.http.delete<void>(`/api/games/${id}`);
   }
-  startGame(id: number) {
-    return this.http.post<Data<Game>>(`/api/games/${id}/start`, {}).pipe(map((r) => r.data));
+  /** Démarrer ou rouvrir un match : le mode (avec ou sans buzzer) est toujours choisi. */
+  startGame(id: number, usesBuzzer: boolean) {
+    return this.http.post<Data<Game>>(`/api/games/${id}/start`, { uses_buzzer: usesBuzzer }).pipe(map((r) => r.data));
   }
   finishGame(id: number) {
     return this.http.post<Data<Game>>(`/api/games/${id}/finish`, {}).pipe(map((r) => r.data));
+  }
+  setRubric(id: number, rubricId: number) {
+    return this.http.post<Data<Game>>(`/api/games/${id}/rubric`, { rubric_id: rubricId }).pipe(map((r) => r.data));
   }
   score(id: number, teamId: number, playerId: number | null, points: number, rubricId: number | null = null) {
     return this.http
       .post<Data<Game>>(`/api/games/${id}/events`, { team_id: teamId, player_id: playerId, rubric_id: rubricId, points })
       .pipe(map((r) => r.data));
+  }
+  importQuestions(gameId: number, file: File, mode: 'replace' | 'append') {
+    const body = new FormData();
+    body.append('file', file, file.name);
+    body.append('mode', mode);
+    return this.http.post<{ imported: number; data: Game }>(`/api/games/${gameId}/questions/import`, body);
+  }
+  addQuestion(gameId: number, payload: QuestionPayload) {
+    return this.http.post<Data<Game>>(`/api/games/${gameId}/questions`, payload).pipe(map((r) => r.data));
+  }
+  updateQuestion(id: number, payload: QuestionPayload) {
+    return this.http.put<Data<Game>>(`/api/questions/${id}`, payload).pipe(map((r) => r.data));
+  }
+  deleteQuestion(id: number) {
+    return this.http.delete<Data<Game>>(`/api/questions/${id}`).pipe(map((r) => r.data));
+  }
+  showQuestion(id: number) {
+    return this.http.post<Data<Game>>(`/api/questions/${id}/show`, {}).pipe(map((r) => r.data));
+  }
+  revealQuestion(id: number) {
+    return this.http.post<Data<Game>>(`/api/questions/${id}/reveal`, {}).pipe(map((r) => r.data));
   }
   saveLineup(id: number, teamId: number, starters: number[], substitutes: number[]) {
     return this.http.put<Data<Game>>(`/api/games/${id}/lineup`, { team_id: teamId, starters, substitutes }).pipe(map((r) => r.data));
@@ -314,5 +362,73 @@ export class ApiService {
   }
   deleteUser(id: number) {
     return this.http.delete<void>(`/api/admin/users/${id}`);
+  }
+
+  // Coachs et matchs amicaux sur invitation
+  searchUsers(q: string) {
+    return this.get<(Owner & { email: string })[]>('/api/users/search', { q });
+  }
+  friendlyRequests() {
+    return this.get<FriendlyRequest[]>('/api/friendly-requests');
+  }
+  proposeFriendly(payload: FriendlyRequestPayload) {
+    return this.http.post<Data<FriendlyRequest>>('/api/friendly-requests', payload).pipe(map((r) => r.data));
+  }
+  answerFriendly(id: number, answer: 'accept' | 'decline' | 'cancel') {
+    return this.http.post<Data<FriendlyRequest>>(`/api/friendly-requests/${id}/${answer}`, {}).pipe(map((r) => r.data));
+  }
+
+  // Utilisateurs sous la gestion du manager (coachs de ses équipes et des équipes inscrites à ses compétitions)
+  managedUsers() {
+    return this.http.get<ManagedUsers>('/api/manage/users');
+  }
+  createCoach(payload: { name: string; email: string; password: string; team_id: number }) {
+    return this.http.post<Data<ManagedUser>>('/api/manage/users', payload).pipe(map((r) => r.data));
+  }
+  updateManagedUser(id: number, payload: { name: string; email: string; password: string | null }) {
+    return this.http.put<Data<ManagedUser>>(`/api/manage/users/${id}`, payload).pipe(map((r) => r.data));
+  }
+  deleteManagedUser(id: number) {
+    return this.http.delete<void>(`/api/manage/users/${id}`);
+  }
+  assignCoach(teamId: number, coachId: number) {
+    return this.http.put<ManagedUsers>(`/api/manage/teams/${teamId}/coach`, { coach_id: coachId });
+  }
+
+  // Multibuzzer : côté arbitre
+  buzzer(gameId: number) {
+    return this.get<BuzzerRefereeState>(`/api/games/${gameId}/buzzer`);
+  }
+  buzzerAction(gameId: number, action: 'open' | 'close' | 'code') {
+    return this.http.post<Data<BuzzerRefereeState>>(`/api/games/${gameId}/buzzer/${action}`, {}).pipe(map((r) => r.data));
+  }
+  watchCode(code: string) {
+    return this.get<{ id: number }>(`/api/watch/${encodeURIComponent(code)}`);
+  }
+  setBuzzerMode(gameId: number, usesBuzzer: boolean) {
+    return this.http.put<Data<BuzzerRefereeState>>(`/api/games/${gameId}/buzzer/mode`, { uses_buzzer: usesBuzzer }).pipe(map((r) => r.data));
+  }
+  judgeBuzz(gameId: number, result: 'correct' | 'wrong' | 'passed') {
+    return this.http.post<Data<BuzzerRefereeState>>(`/api/games/${gameId}/buzzer/judge`, { result }).pipe(map((r) => r.data));
+  }
+  releaseBuzzer(gameId: number, playerId: number) {
+    return this.http.delete<Data<BuzzerRefereeState>>(`/api/games/${gameId}/buzzer/devices/${playerId}`).pipe(map((r) => r.data));
+  }
+
+  // Multibuzzer : côté joueur (sans compte, jeton du téléphone)
+  joinBuzzer(code: string) {
+    return this.http.post<Data<BuzzerJoin>>('/api/buzzer/join', { code }).pipe(map((r) => r.data));
+  }
+  claimBuzzer(code: string, playerId: number) {
+    return this.http.post<{ token: string; data: BuzzerPlayerState }>('/api/buzzer/claim', { code, player_id: playerId });
+  }
+  buzzerState(token: string) {
+    return this.http.get<Data<BuzzerPlayerState>>('/api/buzzer/state', { headers: { 'X-Buzzer-Token': token } }).pipe(map((r) => r.data));
+  }
+  buzz(token: string) {
+    return this.http.post<{ won: boolean; data: BuzzerPlayerState }>('/api/buzzer/buzz', {}, { headers: { 'X-Buzzer-Token': token } });
+  }
+  leaveBuzzer(token: string) {
+    return this.http.post<void>('/api/buzzer/leave', {}, { headers: { 'X-Buzzer-Token': token } });
   }
 }

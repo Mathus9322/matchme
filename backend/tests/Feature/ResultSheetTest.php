@@ -24,7 +24,7 @@ class ResultSheetTest extends TestCase
         $game = $competition->games()->create(['team_a_id' => $home->id, 'team_b_id' => $away->id, 'round' => 'Finale']);
         $p = $home->players()->pluck('id');
 
-        $this->postJson("/api/games/{$game->id}/start");
+        $this->postJson("/api/games/{$game->id}/start", ['uses_buzzer' => false]);
         $this->postJson("/api/games/{$game->id}/events", ['team_id' => $home->id, 'player_id' => $p[0], 'rubric_id' => $rubric->id, 'points' => 10]);
         $this->toSecondHalf($game->id);
         $this->assertSame(0, ResultSheet::count());
@@ -61,10 +61,10 @@ class ResultSheetTest extends TestCase
         $competition->teams()->attach([$a->id, $b->id]);
         $game = $competition->games()->create(['team_a_id' => $a->id, 'team_b_id' => $b->id]);
 
-        $this->postJson("/api/games/{$game->id}/start");
+        $this->postJson("/api/games/{$game->id}/start", ['uses_buzzer' => false]);
         $this->toSecondHalf($game->id);
         $this->postJson("/api/games/{$game->id}/finish");
-        $this->postJson("/api/games/{$game->id}/start")->assertJsonPath('data.phase', 'second_half');
+        $this->postJson("/api/games/{$game->id}/start", ['uses_buzzer' => false])->assertJsonPath('data.phase', 'second_half');
         $this->postJson("/api/games/{$game->id}/events", ['team_id' => $b->id, 'points' => 20]);
         $this->postJson("/api/games/{$game->id}/finish");
 
@@ -72,7 +72,7 @@ class ResultSheetTest extends TestCase
         $this->assertSame('b', ResultSheet::first()->data['winner']);
 
         $friendly = $this->postJson('/api/games/friendly', [
-            'team_a' => ['id' => $a->id], 'team_b' => ['id' => $b->id], 'start' => true,
+            'team_a' => ['id' => $a->id], 'team_b' => ['id' => $b->id], 'start' => true, 'uses_buzzer' => false,
         ])->json('data.id');
         $this->toSecondHalf($friendly);
         $this->postJson("/api/games/{$friendly}/finish")->assertJsonPath('data.result_sheet_id', null);

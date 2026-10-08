@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
-import { adminGuard, authGuard, guestGuard, staffGuard } from './core/guards';
+import { adminGuard, authGuard, guestGuard, organizerGuard, staffGuard } from './core/guards';
 
 
 export const routes: Routes = [
@@ -13,6 +13,10 @@ export const routes: Routes = [
   { path: 'competitions/:id', loadComponent: () => import('./pages/competition-detail').then((m) => m.CompetitionDetailPage), title: 'Compétition · MatchMe' },
   { path: 'equipes', loadComponent: () => import('./pages/teams').then((m) => m.TeamsPage), title: 'Équipes · MatchMe' },
   { path: 'equipes/:id', loadComponent: () => import('./pages/team-detail').then((m) => m.TeamDetailPage), title: 'Équipe · MatchMe' },
+  { path: 'regarder', loadComponent: () => import('./pages/watch').then((m) => m.WatchPage), title: 'Regarder un match · MatchMe' },
+  { path: 'regarder/:code', loadComponent: () => import('./pages/watch').then((m) => m.WatchPage), title: 'Regarder un match · MatchMe' },
+  { path: 'buzzer', loadComponent: () => import('./pages/buzzer').then((m) => m.BuzzerPage), title: 'Buzzer · MatchMe' },
+  { path: 'buzzer/:code', loadComponent: () => import('./pages/buzzer').then((m) => m.BuzzerPage), title: 'Buzzer · MatchMe' },
   { path: 'matchs/:id', loadComponent: () => import('./pages/game-live').then((m) => m.GameLivePage), title: 'Match en direct · MatchMe' },
   { path: 'profil', canActivate: [authGuard], loadComponent: () => import('./pages/profile').then((m) => m.ProfilePage), title: 'Mon profil · MatchMe' },
 
@@ -24,13 +28,14 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./pages/manage/dashboard').then((m) => m.DashboardPage), title: 'Tableau de bord · MatchMe' },
       { path: 'competitions', loadComponent: () => import('./pages/competitions').then((m) => m.CompetitionsPage), title: 'Mes compétitions · MatchMe' },
-      { path: 'competitions/nouvelle', loadComponent: () => import('./pages/competition-form').then((m) => m.CompetitionFormPage), title: 'Nouvelle compétition · MatchMe' },
+      { path: 'competitions/nouvelle', canActivate: [organizerGuard], loadComponent: () => import('./pages/competition-form').then((m) => m.CompetitionFormPage), title: 'Nouvelle compétition · MatchMe' },
       { path: 'competitions/:id/documents', loadComponent: () => import('./pages/competition-documents').then((m) => m.CompetitionDocumentsPage), title: 'Documents · MatchMe' },
       { path: 'competitions/:id', loadComponent: () => import('./pages/competition-detail').then((m) => m.CompetitionDetailPage), title: 'Gérer la compétition · MatchMe' },
       { path: 'equipes', loadComponent: () => import('./pages/teams').then((m) => m.TeamsPage), title: 'Mes équipes · MatchMe' },
-      { path: 'equipes/nouvelle', loadComponent: () => import('./pages/team-form').then((m) => m.TeamFormPage), title: 'Nouvelle équipe · MatchMe' },
+      { path: 'equipes/nouvelle', canActivate: [organizerGuard], loadComponent: () => import('./pages/team-form').then((m) => m.TeamFormPage), title: 'Nouvelle équipe · MatchMe' },
       { path: 'equipes/:id', loadComponent: () => import('./pages/team-detail').then((m) => m.TeamDetailPage), title: 'Fiche équipe · MatchMe' },
       { path: 'equipes/:id/modifier', loadComponent: () => import('./pages/team-form').then((m) => m.TeamFormPage), title: 'Modifier l’équipe · MatchMe' },
+      { path: 'utilisateurs', canActivate: [organizerGuard], loadComponent: () => import('./pages/manage/users').then((m) => m.ManagedUsersPage), title: 'Mes coachs · MatchMe' },
       { path: 'amical', loadComponent: () => import('./pages/friendly').then((m) => m.FriendlyPage), title: 'Match amical · MatchMe' },
       { path: 'matchs/:id', loadComponent: () => import('./pages/game-live').then((m) => m.GameLivePage), title: 'Arbitrage · MatchMe' },
       { path: 'profil', loadComponent: () => import('./pages/profile').then((m) => m.ProfilePage), title: 'Mon profil · MatchMe' },

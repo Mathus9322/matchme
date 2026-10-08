@@ -12,11 +12,16 @@ const MANAGE = '/gestion';
 export class AreaService {
   private readonly router = inject(Router);
   readonly inManage = signal(this.router.url.startsWith(MANAGE));
+  /** Buzzer des joueurs : plein écran, sans en-tête ni pied de page. */
+  readonly bare = signal(location.pathname.startsWith('/buzzer'));
 
   constructor() {
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe((e) => this.inManage.set(e.urlAfterRedirects.startsWith(MANAGE)));
+      .subscribe((e) => {
+        this.inManage.set(e.urlAfterRedirects.startsWith(MANAGE));
+        this.bare.set(e.urlAfterRedirects.startsWith('/buzzer'));
+      });
   }
 
   /** Lien dans l'espace courant : link('competitions', 3) → ['/gestion', 'competitions', 3] ou ['/competitions', 3]. */

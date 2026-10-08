@@ -46,6 +46,34 @@ class AuthController extends Controller
         return new UserResource($request->user());
     }
 
+    /** « Créer mon espace » : tout utilisateur peut devenir manager pour organiser ses compétitions. */
+    public function createSpace(Request $request): UserResource
+    {
+        $user = $request->user();
+        if (! $user->canOrganize()) {
+            $user->update(['role' => User::ROLE_MANAGER]);
+        }
+
+        return new UserResource($user);
+    }
+
+    /** Recherche d'utilisateurs inscrits, pour désigner le coach d'une équipe. */
+    public function search(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->query('q'));
+        if (mb_strlen($term) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $users = User::query()
+            ->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%"))
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['data' => $users->map(fn (User $u) => [...$u->summary(), 'email' => $u->email])]);
+    }
+
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();

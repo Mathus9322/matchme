@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { ApiService, errorMessage } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
 import { Competition, COMPETITION_STATUS_LABELS, ROLE_LABELS, Game, GAME_STATUS_LABELS, GameStatus, Stats, Team, User } from '../core/models';
+import { DialogService } from '../shared/dialog';
 
 type Tab = 'dashboard' | 'users' | 'competitions' | 'teams' | 'games';
 
@@ -167,6 +168,7 @@ interface EditableUser extends User {
   `,
 })
 export class AdminPage {
+  private readonly dialog = inject(DialogService);
   protected readonly api = inject(ApiService);
   protected readonly auth = inject(AuthService);
   protected readonly tabs: { id: Tab; label: string }[] = [
@@ -218,8 +220,8 @@ export class AdminPage {
     this.run(this.api.updateGame(g.id, payload), 'Statut du match mis à jour.');
   }
 
-  protected confirmRun(question: string, request: Observable<unknown>, success: string): void {
-    if (confirm(question)) {
+  protected async confirmRun(question: string, request: Observable<unknown>, success: string): Promise<void> {
+    if (await this.dialog.confirm(question, { confirmLabel: 'Supprimer', danger: true })) {
       this.run(request, success);
     }
   }
