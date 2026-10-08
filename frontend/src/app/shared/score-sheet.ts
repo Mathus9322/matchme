@@ -2,17 +2,18 @@ import { DatePipe } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { ResultSheet, SheetTeam } from '../core/models';
 import { Avatar } from './avatar';
+import { Logo } from './logo';
 
 /** Feuille de score d'un match terminé, mise en page au format A4 pour l'export PDF / PNG. */
 @Component({
   selector: 'app-score-sheet',
-  imports: [DatePipe, Avatar],
+  imports: [DatePipe, Avatar, Logo],
   template: `
     @let s = sheet();
     <article class="sheet">
       <header class="head">
         <div>
-          <p class="brand">match<span>me</span><i>.</i></p>
+          <p class="brand"><app-logo [size]="30" /><span>match<span>me</span><i>.</i></span></p>
           <p class="kicker">Feuille de score officielle</p>
         </div>
         <div class="meta">
@@ -127,8 +128,8 @@ import { Avatar } from './avatar';
     :host { display: block; }
     .sheet { width: 794px; min-height: 1123px; box-sizing: border-box; padding: 44px 48px; background: #fffdf8; color: #2b2219; font-family: 'DejaVu Sans', system-ui, sans-serif; font-size: 12px; }
     .head { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 3px solid #c7902b; }
-    .brand { margin: 0; font-size: 24px; font-weight: 800; }
-    .brand span { font-weight: 500; }
+    .brand { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 24px; font-weight: 800; }
+    .brand > span > span { font-weight: 500; }
     .brand i { color: #ac6327; font-style: normal; }
     .kicker { margin: 4px 0 0; color: #8a6017; font-family: 'DejaVu Sans Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
     .meta { display: grid; justify-items: end; gap: 3px; text-align: right; }

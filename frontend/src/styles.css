@@ -44,8 +44,8 @@ h1, h2, h3 { margin: 0; }
   flex-direction: column;
 }
 .topbar { min-height: 78px; display: flex; align-items: center; gap: 28px; border-bottom: 1px solid var(--line); }
-.brand { color: var(--ink); font-size: 26px; font-weight: 800; text-decoration: none; }
-.brand span { font-weight: 500; }
+.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-size: 26px; font-weight: 800; text-decoration: none; }
+.brand-word span, p.brand span { font-weight: 500; }
 .brand i { color: var(--rust); font-style: normal; }
 .nav { flex: 1; display: flex; align-items: center; gap: 4px; }
 .nav a:not(.btn) { padding: 8px 12px; color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; border-radius: 6px; }

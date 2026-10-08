@@ -5,16 +5,17 @@ import { ROLE_LABELS } from '../../core/models';
 import { Avatar } from '../../shared/avatar';
 import { Icon, IconName } from '../../shared/icon';
 import { NotificationBell } from '../../shared/notification-bell';
+import { Logo } from '../../shared/logo';
 
 /** Espace de gestion (managers, coachs et administrateurs) : menu latéral et portail vers la vue publique. */
 @Component({
   selector: 'app-manage-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Avatar, Icon, NotificationBell],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Avatar, Icon, NotificationBell, Logo],
   template: `
     <div class="manage">
       <aside class="side" [class.open]="menuOpen()">
         <div class="side-top">
-          <a class="brand" routerLink="/gestion">match<span>me</span><i>.</i></a>
+          <a class="brand" routerLink="/gestion"><app-logo class="brand-mark" [size]="30" /><span>match<span>me</span><i>.</i></span></a>
           <span class="space">Espace gestion</span>
           <button class="side-toggle" type="button" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-label="Menu"><app-icon name="menu" [size]="20" /></button>
         </div>
@@ -55,8 +56,10 @@ import { NotificationBell } from '../../shared/notification-bell';
     .manage { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
     .side { position: sticky; top: 0; display: flex; flex-direction: column; gap: 18px; height: 100vh; padding: 22px 16px; background: var(--ink); color: var(--paper); overflow-y: auto; }
     .side-top { display: grid; gap: 2px; padding: 0 10px; }
-    .brand { color: var(--paper); font-size: 24px; font-weight: 800; text-decoration: none; }
-    .brand span { font-weight: 500; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--paper); font-size: 24px; font-weight: 800; text-decoration: none; }
+    .brand > span > span { font-weight: 500; }
+    /* Sur le fond encre du menu, un liseré doré détache l'emblème. */
+    .brand-mark { border-radius: 8px; box-shadow: 0 0 0 1.5px rgba(240, 205, 135, .55); }
     .brand i { color: var(--gold); font-style: normal; }
     .space { color: var(--gold); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
     .side-toggle { display: none; }

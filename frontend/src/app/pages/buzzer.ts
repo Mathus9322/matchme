@@ -6,6 +6,7 @@ import { BuzzerJoin, BuzzerPlayerState, BuzzerState } from '../core/models';
 import { RealtimeService } from '../core/realtime.service';
 import { DialogService } from '../shared/dialog';
 import { Icon } from '../shared/icon';
+import { Logo } from '../shared/logo';
 
 const TOKEN_KEY = 'matchme.buzzer';
 
@@ -15,11 +16,11 @@ const TOKEN_KEY = 'matchme.buzzer';
  */
 @Component({
   selector: 'app-buzzer',
-  imports: [FormsModule, Icon],
+  imports: [FormsModule, Icon, Logo],
   template: `
     <main class="screen" [class]="'screen tone-' + tone()">
       <header class="top">
-        <span class="bz-brand">match<b>me</b><i>.</i> <small>buzzer</small></span>
+        <span class="bz-brand"><app-logo class="bz-mark" [size]="26" /><span>match<b>me</b><i>.</i><small>buzzer</small></span></span>
         @if (state(); as s) {
           <span class="live" [class.on]="realtime.connected()" [title]="realtime.connected() ? 'Connexion instantanée' : 'Connexion de secours (rafraîchissement régulier)'"></span>
         }
@@ -94,7 +95,8 @@ const TOKEN_KEY = 'matchme.buzzer';
     .tone-mine { --bg: #6b4a12; }
     .tone-other { --bg: #241c15; }
     .top { display: flex; justify-content: space-between; align-items: center; }
-    .bz-brand { color: var(--paper); font-size: 20px; font-weight: 500; }
+    .bz-brand { display: inline-flex; align-items: center; gap: 8px; color: var(--paper); font-size: 20px; font-weight: 500; }
+    .bz-mark { border-radius: 7px; box-shadow: 0 0 0 1.5px rgba(240, 205, 135, .55); }
     .bz-brand b { font-weight: 800; }
     .bz-brand i { color: var(--gold); font-style: normal; }
     .bz-brand small { margin-left: 6px; color: var(--gold-light); font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }

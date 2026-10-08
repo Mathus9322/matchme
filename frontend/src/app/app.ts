@@ -5,10 +5,11 @@ import { AuthService } from './core/auth.service';
 import { Avatar } from './shared/avatar';
 import { DialogHost } from './shared/dialog';
 import { Icon } from './shared/icon';
+import { Logo } from './shared/logo';
 
 @Component({
   selector: 'app-root',
-  imports: [Icon, RouterOutlet, RouterLink, RouterLinkActive, Avatar, DialogHost],
+  imports: [Icon, RouterOutlet, RouterLink, RouterLinkActive, Avatar, DialogHost, Logo],
   template: `
     @if (area.bare()) {
       <router-outlet />
@@ -24,7 +25,7 @@ import { Icon } from './shared/icon';
       }
       <div class="shell">
         <header class="topbar">
-          <a class="brand" routerLink="/" aria-label="MatchMe, accueil">match<span>me</span><i>.</i></a>
+          <a class="brand" routerLink="/" aria-label="MatchMe, accueil"><app-logo [size]="34" /><span class="brand-word">match<span>me</span><i>.</i></span></a>
           <button class="menu-toggle" type="button" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-label="Menu"><app-icon name="menu" [size]="20" /></button>
           <nav class="nav" [class.open]="menuOpen()" (click)="menuOpen.set(false)">
             <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Direct</a>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MatchMe">
+  <title>MatchMe</title>
+  <rect width="64" height="64" rx="15" fill="#2b2219"/>
+  <path d="M12 46V19l12.5 15L37 19v27" fill="none" stroke="#f6f4ee" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="49.5" cy="41.5" r="6.5" fill="#eac575"/>
+</svg>
