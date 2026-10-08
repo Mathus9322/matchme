@@ -1,0 +1,56 @@
+# Blueprint Render : « New → Blueprint » sur ce dépôt crée le service et la base.
+# Un seul service Docker : Angular + API Laravel + Reverb (buzzer), sur une seule adresse.
+services:
+  - type: web
+    name: matchme
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: MatchMe
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      # Clé générée par Render (le préfixe « base64: » est ajouté au démarrage).
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_LOCALE
+        value: fr
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: matchme-db
+          property: connectionString
+      - key: CACHE_STORE
+        value: database
+      - key: SESSION_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: MAIL_MAILER
+        value: log
+      # Buzzer : Laravel publie vers Reverb en local ; les navigateurs passent par /app (nginx).
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - key: REVERB_HOST
+        value: 127.0.0.1
+      - key: REVERB_PORT
+        value: "8080"
+      - key: REVERB_SCHEME
+        value: http
+      # Base vide (nouvelle base gratuite chaque mois) : jeu de données minimal au démarrage.
+      - key: SEED_ON_EMPTY
+        value: "true"
+
+databases:
+  - name: matchme-db
+    plan: free
+    databaseName: matchme
+    user: matchme

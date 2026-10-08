@@ -9,7 +9,6 @@ use App\Models\RubricPreset;
 use App\Models\User;
 use App\Notifications\CoachAssigned;
 use App\Notifications\FriendlyRequestUpdated;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 /**
@@ -21,11 +20,10 @@ use Illuminate\Database\Seeder;
  */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     public function run(): void
     {
-        $user = fn (string $name, string $email, string $role = User::ROLE_USER) => User::factory()->create(compact('name', 'email', 'role') + ['password' => 'password']);
+        // User::create et non une factory : le seeder tourne aussi en production (sans Faker).
+        $user = fn (string $name, string $email, string $role = User::ROLE_USER) => User::create(compact('name', 'email', 'role') + ['password' => 'password']);
 
         $user('Administrateur', 'admin@matchme.test', User::ROLE_ADMIN);
         $user('Spectateur', 'spectateur@matchme.test');

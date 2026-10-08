@@ -1,0 +1,16 @@
+.git
+**/node_modules
+**/.angular
+**/dist
+backend/vendor
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/database/*.sqlite
+backend/storage/app/*
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*.php
+backend/public/storage

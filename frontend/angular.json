@@ -32,7 +32,9 @@
               "html2canvas",
               "raf",
               "rgbcolor",
-              "canvg"
+              "canvg",
+              "pusher-js",
+              "qrcode"
             ]
           },
           "configurations": {
