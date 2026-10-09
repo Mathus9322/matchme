@@ -1,13 +1,15 @@
 import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { map, Observable, of, switchMap } from 'rxjs';
 import { ApiService, CompetitionPayload, errorMessage } from '../core/api.service';
-import { COMPETITION_STATUS_LABELS } from '../core/models';
+import { Competition, COMPETITION_STATUS_LABELS } from '../core/models';
 import { Icon } from '../shared/icon';
+import { ImagePicker } from '../shared/image-picker';
 
 @Component({
   selector: 'app-competition-form',
-  imports: [Icon, FormsModule, RouterLink],
+  imports: [Icon, FormsModule, RouterLink, ImagePicker],
   template: `
     <div class="medium">
       <p class="eyebrow">{{ id() ? 'Modification' : 'Nouvelle compétition' }}</p>
@@ -18,6 +20,9 @@ import { Icon } from '../shared/icon';
         <label class="field"><span>Nom</span>
           <input name="name" [(ngModel)]="form.name" maxlength="120" placeholder="Ex. Coupe régionale 2026" required />
         </label>
+        <div class="field"><span>Image de couverture</span>
+          <app-image-picker [src]="cover.preview" [name]="form.name || 'Compétition'" what="l’image" shape="square" [size]="80" (picked)="pickCover($event)" (removed)="removeCover()" />
+        </div>
         <label class="field"><span>Description</span>
           <textarea name="description" [(ngModel)]="form.description" maxlength="2000"></textarea>
         </label>
@@ -62,6 +67,8 @@ export class CompetitionFormPage implements OnInit {
   readonly id = input<string>();
   protected readonly statuses = Object.entries(COMPETITION_STATUS_LABELS);
   protected form: CompetitionPayload = { name: '', description: '', starts_on: null, ends_on: null, status: 'open', format: 'groups' };
+  /** Couverture choisie : envoyée une fois la compétition enregistrée. */
+  protected cover: { preview: string | null; file?: File; remove?: boolean } = { preview: null };
   protected readonly saving = signal(false);
   protected readonly error = signal('');
 
@@ -70,8 +77,17 @@ export class CompetitionFormPage implements OnInit {
     if (id) {
       this.api.competition(+id).subscribe(({ competition: c }) => {
         this.form = { name: c.name, description: c.description, starts_on: c.starts_on, ends_on: c.ends_on, status: c.status, format: c.format };
+        this.cover = { preview: c.cover_url ?? null };
       });
     }
+  }
+
+  protected pickCover(file: File): void {
+    this.cover = { preview: URL.createObjectURL(file), file };
+  }
+
+  protected removeCover(): void {
+    this.cover = { preview: null, remove: true };
   }
 
   protected submit(): void {
@@ -80,7 +96,9 @@ export class CompetitionFormPage implements OnInit {
     const payload = { ...this.form, starts_on: this.form.starts_on || null, ends_on: this.form.ends_on || null };
     const id = this.id();
     const request = id ? this.api.updateCompetition(+id, payload) : this.api.createCompetition(payload);
-    request.subscribe({
+    const cover = (c: Competition): Observable<unknown> =>
+      this.cover.file ? this.api.uploadCover(c.id, this.cover.file) : this.cover.remove ? this.api.removeCover(c.id) : of(null);
+    request.pipe(switchMap((c) => cover(c).pipe(map(() => c)))).subscribe({
       next: (c) => this.router.navigate(['/gestion/competitions', c.id]),
       error: (e) => {
         this.error.set(errorMessage(e));

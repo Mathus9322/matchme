@@ -155,6 +155,7 @@ export interface Competition {
   id: number;
   name: string;
   description: string | null;
+  cover_url?: string | null;
   starts_on: string | null;
   ends_on: string | null;
   status: CompetitionStatus;

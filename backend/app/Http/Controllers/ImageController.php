@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CompetitionResource;
 use App\Http\Resources\TeamResource;
 use App\Http\Resources\UserResource;
+use App\Models\Competition;
 use App\Models\Player;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/** Envoi et suppression des photos de profil, photos de joueurs et logos d'équipe. */
+/** Envoi et suppression des photos de profil, photos de joueurs, logos d'équipe et couvertures de compétition. */
 class ImageController extends Controller
 {
     private const RULES = ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048', 'dimensions:max_width=4000,max_height=4000'];
@@ -70,6 +72,23 @@ class ImageController extends Controller
         $player->removeImage();
 
         return response()->json(['data' => ['id' => $player->id, 'name' => $player->name, 'photo_url' => null]]);
+    }
+
+    public function storeCover(Request $request, Competition $competition): CompetitionResource
+    {
+        abort_unless($competition->isManagedBy($request->user()), 403, 'Vous ne gérez pas cette compétition.');
+        $request->validate(['image' => self::RULES], self::MESSAGES);
+        $competition->storeImage($request->file('image'));
+
+        return new CompetitionResource($competition->load('owner')->loadCount(['teams', 'games']));
+    }
+
+    public function destroyCover(Request $request, Competition $competition): CompetitionResource
+    {
+        abort_unless($competition->isManagedBy($request->user()), 403, 'Vous ne gérez pas cette compétition.');
+        $competition->removeImage();
+
+        return new CompetitionResource($competition->load('owner')->loadCount(['teams', 'games']));
     }
 
     private function authorizeTeam(Request $request, Team $team): void

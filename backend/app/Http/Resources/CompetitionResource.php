@@ -15,6 +15,7 @@ class CompetitionResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
+            'cover_url' => $this->imageUrl(),
             'starts_on' => $this->starts_on?->format('Y-m-d'),
             'ends_on' => $this->ends_on?->format('Y-m-d'),
             'status' => $this->status,

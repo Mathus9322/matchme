@@ -1,14 +1,14 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import { AreaService } from '../core/area.service';
 import { AuthService } from '../core/auth.service';
 import { Competition, COMPETITION_STATUS_LABELS } from '../core/models';
+import { CompetitionCard } from '../shared/competition-card';
 
 @Component({
   selector: 'app-competitions',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, CompetitionCard],
   template: `
     <div class="page-head">
       <div>
@@ -30,21 +30,16 @@ import { Competition, COMPETITION_STATUS_LABELS } from '../core/models';
       }
     </div>
 
-    <div class="grid">
+    <div class="grid comp-grid">
       @for (competition of filtered(); track competition.id) {
-        <a class="card card-link" [routerLink]="area.link('competitions', competition.id)">
-          <span [class]="'badge badge-' + competition.status">{{ labels[competition.status] }}</span>
-          <h3 style="margin-top: 12px">{{ competition.name }}</h3>
-          <p class="meta">
-            @if (competition.starts_on) { Du {{ competition.starts_on | date: 'd MMM y' }} }
-            @if (competition.ends_on) { au {{ competition.ends_on | date: 'd MMM y' }} }
-          </p>
-          <p class="meta">{{ competition.teams_count }} équipes · {{ competition.games_count }} matchs · par {{ competition.owner?.name }}</p>
-        </a>
+        <app-competition-card [competition]="competition" [link]="area.link('competitions', competition.id)" />
       } @empty {
         <p class="empty" style="grid-column: 1 / -1">Aucune compétition pour ce filtre.</p>
       }
     </div>
+  `,
+  styles: `
+    .comp-grid { grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 22px; }
   `,
 })
 export class CompetitionsPage {

@@ -1,13 +1,15 @@
 import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { map, Observable, of, switchMap } from 'rxjs';
 import { ApiService, CompetitionPayload, errorMessage } from '../core/api.service';
 import { Competition, COMPETITION_STATUS_LABELS } from '../core/models';
 import { Modal } from './modal';
 import { Icon } from './icon';
+import { ImagePicker } from './image-picker';
 
 @Component({
   selector: 'app-competition-edit-modal',
-  imports: [Icon, FormsModule, Modal],
+  imports: [Icon, FormsModule, Modal, ImagePicker],
   template: `
     <app-modal [open]="open()" title="Modifier la compétition" [eyebrow]="competition().name" (closed)="closed.emit()">
       <form class="form" (ngSubmit)="submit()">
@@ -15,6 +17,9 @@ import { Icon } from './icon';
         <label class="field"><span>Nom</span>
           <input name="name" [(ngModel)]="form.name" maxlength="120" required />
         </label>
+        <div class="field"><span>Image de couverture</span>
+          <app-image-picker [src]="cover.preview" [name]="form.name || 'Compétition'" what="l’image" shape="square" [size]="80" (picked)="pickCover($event)" (removed)="removeCover()" />
+        </div>
         <label class="field"><span>Description</span>
           <textarea name="description" [(ngModel)]="form.description" maxlength="2000"></textarea>
         </label>
@@ -71,6 +76,8 @@ export class CompetitionEditModal {
   protected readonly statuses = Object.entries(COMPETITION_STATUS_LABELS);
   protected readonly saving = signal(false);
   protected readonly error = signal('');
+  /** Couverture choisie : envoyée après l'enregistrement du formulaire. */
+  protected cover: { preview: string | null; file?: File; remove?: boolean } = { preview: null };
   protected form: CompetitionPayload = { name: '', description: '', starts_on: null, ends_on: null, status: 'open' };
 
   constructor() {
@@ -79,16 +86,30 @@ export class CompetitionEditModal {
       if (this.open()) {
         const c = this.competition();
         this.form = { name: c.name, description: c.description, starts_on: c.starts_on, ends_on: c.ends_on, status: c.status, format: c.format };
+        this.cover = { preview: c.cover_url ?? null };
         this.error.set('');
       }
     });
+  }
+
+  protected pickCover(file: File): void {
+    this.cover = { preview: URL.createObjectURL(file), file };
+  }
+
+  protected removeCover(): void {
+    this.cover = { preview: null, remove: true };
   }
 
   protected submit(): void {
     this.saving.set(true);
     this.error.set('');
     const payload = { ...this.form, starts_on: this.form.starts_on || null, ends_on: this.form.ends_on || null };
-    this.api.updateCompetition(this.competition().id, payload).subscribe({
+    const id = this.competition().id;
+    const cover = (): Observable<Competition | null> =>
+      this.cover.file ? this.api.uploadCover(id, this.cover.file) : this.cover.remove ? this.api.removeCover(id) : of(null);
+    this.api.updateCompetition(id, payload).pipe(
+      switchMap((competition) => cover().pipe(map((updated) => ({ ...competition, cover_url: updated ? updated.cover_url : competition.cover_url })))),
+    ).subscribe({
       next: (competition) => {
         this.saving.set(false);
         this.saved.emit(competition);

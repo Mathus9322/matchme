@@ -19,8 +19,8 @@ import { Icon } from '../shared/icon';
     </form>
   `,
   styles: `
-    .watch { display: grid; gap: 16px; width: min(480px, 100%); margin: 24px auto; padding: 28px; }
-    .code { padding: 14px; border: 2px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); font-family: var(--mono); font-size: 36px; letter-spacing: .3em; text-align: center; text-transform: uppercase; }
+    .watch { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; width: min(540px, 100%); margin: 24px auto; padding: 28px; }
+    .code { width: 100%; min-width: 0; padding: 14px; border: 2px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); font-family: var(--mono); font-size: 36px; letter-spacing: .3em; text-align: center; text-transform: uppercase; }
     .code:focus { outline: none; border-color: var(--ochre); box-shadow: 0 0 0 3px rgba(234, 197, 117, .45); }
     .btn { justify-self: stretch; justify-content: center; padding: 12px; font-size: 16px; }
   `,

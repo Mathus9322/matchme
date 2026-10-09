@@ -133,7 +133,7 @@ export class ApiService {
     return this.http.delete<void>(`/api/competitions/${competitionId}/teams/${teamId}`);
   }
 
-  // Images : photo de profil, logo d'équipe, photo de joueur
+  // Images : photo de profil, logo d'équipe, photo de joueur, couverture de compétition
   private image<T>(url: string, file: File) {
     const body = new FormData();
     body.append('image', file, file.name);
@@ -144,6 +144,12 @@ export class ApiService {
   }
   removeAvatar() {
     return this.http.delete<Data<User>>('/api/auth/me/avatar').pipe(map((r) => r.data));
+  }
+  uploadCover(competitionId: number, file: File) {
+    return this.image<Competition>(`/api/competitions/${competitionId}/cover`, file);
+  }
+  removeCover(competitionId: number) {
+    return this.http.delete<Data<Competition>>(`/api/competitions/${competitionId}/cover`).pipe(map((r) => r.data));
   }
   uploadLogo(teamId: number, file: File) {
     return this.image<Team>(`/api/teams/${teamId}/logo`, file);

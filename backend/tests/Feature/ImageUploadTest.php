@@ -102,4 +102,22 @@ class ImageUploadTest extends TestCase
         $this->deleteJson("/api/teams/{$team->id}")->assertNoContent();
         $this->assertCount(0, Storage::disk('public')->allFiles());
     }
+
+    public function test_competition_owner_can_set_and_remove_a_cover(): void
+    {
+        $owner = User::factory()->create();
+        $competition = Competition::create(['owner_id' => $owner->id, 'name' => 'Coupe régionale']);
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->post("/api/competitions/{$competition->id}/cover", ['image' => UploadedFile::fake()->image('x.png')], ['Accept' => 'application/json'])->assertForbidden();
+
+        Sanctum::actingAs($owner);
+        $url = $this->post("/api/competitions/{$competition->id}/cover", ['image' => UploadedFile::fake()->image('cover.jpg', 800, 500)], ['Accept' => 'application/json'])
+            ->assertOk()->json('data.cover_url');
+        $this->assertStringStartsWith('/storage/covers/', $url);
+        $this->getJson('/api/competitions')->assertJsonPath('data.0.cover_url', $url);
+
+        $this->deleteJson("/api/competitions/{$competition->id}/cover")->assertJsonPath('data.cover_url', null);
+        $this->assertCount(0, Storage::disk('public')->allFiles('covers'));
+    }
 }

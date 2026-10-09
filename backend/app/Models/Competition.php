@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasImage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Storage;
 
 class Competition extends Model
 {
+    use HasImage;
+
     public const STATUS_DRAFT = 'draft';
 
     public const STATUS_OPEN = 'open';
@@ -45,6 +48,16 @@ class Competition extends Model
     {
         // Les lignes sont supprimées en cascade par la base ; on retire aussi les fichiers.
         static::deleted(fn (Competition $competition) => Storage::disk('local')->deleteDirectory("competitions/{$competition->id}"));
+    }
+
+    protected function imageColumn(): string
+    {
+        return 'cover_path';
+    }
+
+    protected function imageFolder(): string
+    {
+        return 'covers';
     }
 
     public function owner(): BelongsTo

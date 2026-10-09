@@ -66,6 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/teams/{team}/logo', [ImageController::class, 'destroyLogo']);
     Route::post('/players/{player}/photo', [ImageController::class, 'storePlayerPhoto']);
     Route::delete('/players/{player}/photo', [ImageController::class, 'destroyPlayerPhoto']);
+    Route::post('/competitions/{competition}/cover', [ImageController::class, 'storeCover']);
+    Route::delete('/competitions/{competition}/cover', [ImageController::class, 'destroyCover']);
 
     Route::get('/manage/overview', [ManageController::class, 'overview']);
 
