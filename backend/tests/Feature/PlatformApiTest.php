@@ -215,7 +215,13 @@ class PlatformApiTest extends TestCase
         $this->getJson('/api/admin/stats')->assertForbidden();
 
         $admin = Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
-        $this->getJson('/api/admin/stats')->assertOk()->assertJsonPath('data.users', 2);
+        $this->getJson('/api/admin/stats')->assertOk()->assertJsonPath('data.users', 2)
+            ->assertJsonCount(12, 'data.activity')
+            ->assertJsonPath('data.activity.11.users', 2)
+            ->assertJsonPath('data.users_by_role.0', ['key' => 'user', 'count' => 1])
+            ->assertJsonPath('data.users_by_role.2', ['key' => 'admin', 'count' => 1]);
+        $this->getJson('/api/admin/stats?weeks=4')->assertJsonCount(4, 'data.activity');
+        $this->getJson('/api/admin/stats?weeks=5')->assertUnprocessable();
         $this->getJson('/api/admin/users')->assertOk()->assertJsonCount(2, 'data');
         $this->deleteJson("/api/admin/users/{$admin->id}")->assertUnprocessable();
     }

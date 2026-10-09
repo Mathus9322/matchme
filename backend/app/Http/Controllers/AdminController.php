@@ -12,13 +12,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class AdminController extends Controller
 {
-    public function stats(): JsonResponse
+    public function stats(Request $request): JsonResponse
     {
+        $weeks = (int) ($request->validate(['weeks' => ['nullable', 'integer', 'in:4,12,26,52']])['weeks'] ?? 12);
+
         return response()->json(['data' => [
             'users' => User::count(),
             'managers' => User::where('role', User::ROLE_MANAGER)->count(),
@@ -27,7 +30,34 @@ class AdminController extends Controller
             'players' => Player::count(),
             'games' => Game::count(),
             'live_games' => Game::where('status', Game::STATUS_LIVE)->count(),
+            'activity' => $this->activity($weeks),
+            'games_by_status' => $this->countBy(Game::query(), 'status', [Game::STATUS_SCHEDULED, Game::STATUS_LIVE, Game::STATUS_FINISHED]),
+            'competitions_by_status' => $this->countBy(Competition::query(), 'status', Competition::STATUSES),
+            'users_by_role' => $this->countBy(User::query(), 'role', User::ROLES),
         ]]);
+    }
+
+    /** Matchs terminés et nouveaux comptes par semaine (lundi), des plus anciennes aux plus récentes. */
+    private function activity(int $weeks): array
+    {
+        $start = Carbon::now()->startOfWeek()->subWeeks($weeks - 1);
+        $week = fn ($date) => Carbon::parse($date)->startOfWeek()->toDateString();
+        $games = Game::where('finished_at', '>=', $start)->pluck('finished_at')->countBy($week);
+        $users = User::where('created_at', '>=', $start)->pluck('created_at')->countBy($week);
+
+        return collect(range(0, $weeks - 1))->map(function (int $i) use ($start, $games, $users) {
+            $key = $start->copy()->addWeeks($i)->toDateString();
+
+            return ['week' => $key, 'games' => $games->get($key, 0), 'users' => $users->get($key, 0)];
+        })->all();
+    }
+
+    /** Nombre de lignes par valeur de la colonne, dans l'ordre donné (0 pour les valeurs absentes). */
+    private function countBy($query, string $column, array $values): array
+    {
+        $counts = $query->selectRaw("{$column} as value, count(*) as total")->groupBy($column)->pluck('total', 'value');
+
+        return collect($values)->map(fn ($value) => ['key' => $value, 'count' => (int) $counts->get($value, 0)])->all();
     }
 
     public function users(Request $request): AnonymousResourceCollection

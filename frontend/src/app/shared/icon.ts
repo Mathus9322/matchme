@@ -3,7 +3,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import {
   AlarmClock, ArrowDown, ArrowLeft, ArrowLeftRight, ArrowRight, ArrowUp, ArrowUpRight, Bell, BellOff, Camera, Check, Coffee, Dices, Download, FileText, Eye, Flag, Folder,
   FolderOpen, GripVertical, IconNode, Lock, LogOut, UserRound, LayoutGrid, Medal, Menu, Pencil, PencilLine, Play, Plus, RotateCcw, Rocket, Shield, Square, Star, TriangleAlert,
-  Trophy, Undo2, Upload, UserCog, Users, X, Zap,
+  Swords, Trophy, Undo2, Upload, UserCog, Users, X, Zap,
 } from 'lucide';
 
 /** Icônes Lucide disponibles dans l'application, par nom. */
@@ -44,6 +44,7 @@ const ICONS = {
   square: Square,
   star: Star,
   'triangle-alert': TriangleAlert,
+  swords: Swords,
   trophy: Trophy,
   'undo-2': Undo2,
   upload: Upload,

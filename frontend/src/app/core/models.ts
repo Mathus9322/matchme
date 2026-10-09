@@ -190,6 +190,10 @@ export interface Stats {
   players: number;
   games: number;
   live_games: number;
+  activity: { week: string; games: number; users: number }[];
+  games_by_status: { key: GameStatus; count: number }[];
+  competitions_by_status: { key: CompetitionStatus; count: number }[];
+  users_by_role: { key: Role; count: number }[];
 }
 
 export interface AppNotification {

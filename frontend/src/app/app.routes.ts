@@ -39,7 +39,8 @@ export const routes: Routes = [
       { path: 'amical', loadComponent: () => import('./pages/friendly').then((m) => m.FriendlyPage), title: 'Match amical · MatchMe' },
       { path: 'matchs/:id', loadComponent: () => import('./pages/game-live').then((m) => m.GameLivePage), title: 'Arbitrage · MatchMe' },
       { path: 'profil', loadComponent: () => import('./pages/profile').then((m) => m.ProfilePage), title: 'Mon profil · MatchMe' },
-      { path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./pages/admin').then((m) => m.AdminPage), title: 'Administration · MatchMe' },
+      { path: 'admin', pathMatch: 'full', redirectTo: 'admin/utilisateurs' },
+      { path: 'admin/:onglet', canActivate: [adminGuard], loadComponent: () => import('./pages/admin').then((m) => m.AdminPage), title: 'Administration · MatchMe' },
     ],
   },
 

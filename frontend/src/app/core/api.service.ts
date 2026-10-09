@@ -357,8 +357,8 @@ export class ApiService {
   }
 
   // Administration
-  stats() {
-    return this.get<Stats>('/api/admin/stats');
+  stats(weeks = 12) {
+    return this.get<Stats>('/api/admin/stats', { weeks });
   }
   users(search = '', role = '') {
     return this.get<User[]>('/api/admin/users', { ...(search && { search }), ...(role && { role }) });

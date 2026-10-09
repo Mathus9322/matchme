@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { Game } from '../../core/models';
+import { AdminInsights } from '../../shared/admin-insights';
 import { GameRow } from '../../shared/game-row';
 import { Icon } from '../../shared/icon';
 
@@ -16,7 +17,7 @@ interface Overview {
 /** Tableau de bord de l'espace de gestion. */
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, GameRow, Icon],
+  imports: [RouterLink, GameRow, Icon, AdminInsights],
   template: `
     <p class="eyebrow">{{ auth.isAdmin() ? 'Administration' : auth.canOrganize() ? 'Espace manager' : 'Espace coach' }}</p>
     <h1 class="page-title">Bonjour, <em>{{ firstName() }}</em></h1>
@@ -43,13 +44,20 @@ interface Overview {
         <div class="stat"><strong>{{ d.stats.finished_games }}</strong><span>Matchs terminés</span></div>
       </div>
 
+      @if (auth.isAdmin()) {
+        <section class="section">
+          <h2 class="section-title" style="margin-bottom: 12px">Statistiques de la plateforme</h2>
+          <app-admin-insights />
+        </section>
+      }
+
       <section class="section">
         <h2 class="section-title" style="margin-bottom: 12px"><span class="live-dot"></span>&nbsp; En direct</h2>
         <div class="stack">
           @for (g of d.live; track g.id) { <app-game-row [game]="g" [showCompetition]="true" /> } @empty { <p class="empty">Aucun de vos matchs n’est en cours.</p> }
         </div>
       </section>
-      <div class="two-cols section">
+      <div class="two-cols games-cols section">
         <section>
           <h2 class="section-title" style="margin-bottom: 12px">Prochains matchs</h2>
           <div class="stack">
@@ -72,6 +80,8 @@ interface Overview {
     .action app-icon { color: var(--rust); }
     .action > span { display: grid; gap: 2px; font-size: 14px; }
     .action > span span { color: var(--muted); font-size: 12px; }
+    /* Côte à côte seulement si chaque colonne garde assez de place pour les noms d'équipes. */
+    .games-cols { grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); }
     a.stat { color: inherit; text-decoration: none; }
     a.stat:hover { border-color: var(--ochre); }
     @media (max-width: 760px) { .actions { grid-template-columns: 1fr; } }

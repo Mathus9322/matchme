@@ -25,6 +25,14 @@ import { Logo } from '../../shared/logo';
               <app-icon [name]="item.icon" [size]="18" /> {{ item.label }}
             </a>
           }
+          @if (auth.isAdmin()) {
+            <span class="nav-heading">Administration</span>
+            @for (item of adminItems; track item.link) {
+              <a [routerLink]="item.link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <app-icon [name]="item.icon" [size]="18" /> {{ item.label }}
+              </a>
+            }
+          }
         </nav>
         <a class="portal" routerLink="/" title="Voir le site tel que le public le voit">
           <app-icon name="eye" [size]="18" />
@@ -67,6 +75,7 @@ import { Logo } from '../../shared/logo';
     nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 9px; color: rgba(246, 244, 238, .72); font-size: 14px; font-weight: 600; text-decoration: none; transition: background .15s ease, color .15s ease; }
     nav a:hover { background: rgba(240, 205, 135, .1); color: var(--paper); }
     nav a.active { background: var(--gold); color: var(--ink); }
+    .nav-heading { margin: 14px 12px 4px; color: rgba(240, 205, 135, .7); font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
     .portal { display: flex; align-items: center; gap: 12px; margin-top: auto; padding: 12px; border: 1px solid rgba(240, 205, 135, .3); border-radius: 12px; color: var(--paper); text-decoration: none; transition: border-color .15s ease, background .15s ease; }
     .portal:hover { border-color: var(--gold); background: rgba(240, 205, 135, .08); }
     .portal > span { display: grid; flex: 1; gap: 2px; font-size: 13px; }
@@ -102,6 +111,14 @@ export class ManageLayout {
   protected readonly roles = ROLE_LABELS;
   protected readonly menuOpen = signal(false);
 
+  /** Rubriques de l'administration ; les statistiques sont sur le tableau de bord. */
+  protected readonly adminItems: { link: string; label: string; icon: IconName }[] = [
+    { link: '/gestion/admin/utilisateurs', label: 'Utilisateurs', icon: 'user-cog' },
+    { link: '/gestion/admin/competitions', label: 'Compétitions', icon: 'trophy' },
+    { link: '/gestion/admin/equipes', label: 'Équipes', icon: 'users' },
+    { link: '/gestion/admin/matchs', label: 'Matchs', icon: 'swords' },
+  ];
+
   protected items(): { link: string; label: string; icon: IconName; exact?: boolean }[] {
     return [
       { link: '/gestion', label: 'Tableau de bord', icon: 'layout-grid', exact: true },
@@ -109,7 +126,6 @@ export class ManageLayout {
       { link: '/gestion/equipes', label: this.auth.isAdmin() ? 'Équipes' : 'Mes équipes', icon: 'users' },
       ...(this.auth.canOrganize() ? [{ link: '/gestion/utilisateurs', label: 'Mes coachs', icon: 'user-cog' as IconName }] : []),
       { link: '/gestion/amical', label: 'Matchs amicaux', icon: 'zap' },
-      ...(this.auth.isAdmin() ? [{ link: '/gestion/admin', label: 'Administration', icon: 'shield' as IconName }] : []),
       { link: '/gestion/profil', label: 'Mon profil', icon: 'user-round' as IconName },
     ];
   }

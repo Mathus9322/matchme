@@ -1,14 +1,17 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { ApiService, errorMessage } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { Competition, COMPETITION_STATUS_LABELS, ROLE_LABELS, Game, GAME_STATUS_LABELS, GameStatus, Stats, Team, User } from '../core/models';
+import { Competition, COMPETITION_STATUS_LABELS, ROLE_LABELS, Game, GAME_STATUS_LABELS, GameStatus, Team, User } from '../core/models';
 import { DialogService } from '../shared/dialog';
 
-type Tab = 'dashboard' | 'users' | 'competitions' | 'teams' | 'games';
+type Tab = 'users' | 'competitions' | 'teams' | 'games';
+
+/** Onglet affiché selon l'adresse : /gestion/admin/utilisateurs, …/competitions, …/equipes, …/matchs. */
+const TAB_SLUGS: Record<string, Tab> = { utilisateurs: 'users', competitions: 'competitions', equipes: 'teams', matchs: 'games' };
 
 interface EditableUser extends User {
   password?: string;
@@ -20,34 +23,15 @@ interface EditableUser extends User {
   template: `
     <div class="page-head">
       <div>
-        <p class="eyebrow">Espace administrateur</p>
-        <h1 class="page-title">Gestion des <em>données</em></h1>
+        <p class="eyebrow">Administration</p>
+        <h1 class="page-title">{{ tabLabel() }}</h1>
       </div>
     </div>
 
-    <div class="tabs" role="tablist">
-      @for (t of tabs; track t.id) {
-        <button type="button" role="tab" [class.active]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="open(t.id)">{{ t.label }}</button>
-      }
-    </div>
 
     @if (message(); as m) { <p class="alert" [class.alert-ok]="m.ok" role="status" style="margin-bottom: 16px">{{ m.text }}</p> }
 
     @switch (tab()) {
-      @case ('dashboard') {
-        @if (stats(); as s) {
-          <div class="stats">
-            <div class="stat stat-accent"><strong>{{ s.live_games }}</strong><span>Matchs en direct</span></div>
-            <div class="stat"><strong>{{ s.users }}</strong><span>Utilisateurs</span></div>
-            <div class="stat"><strong>{{ s.managers }}</strong><span>Managers</span></div>
-            <div class="stat"><strong>{{ s.competitions }}</strong><span>Compétitions</span></div>
-            <div class="stat"><strong>{{ s.teams }}</strong><span>Équipes</span></div>
-            <div class="stat"><strong>{{ s.players }}</strong><span>Joueurs</span></div>
-            <div class="stat"><strong>{{ s.games }}</strong><span>Matchs</span></div>
-          </div>
-        }
-      }
-
       @case ('users') {
         <div class="row" style="margin-bottom: 14px">
           <input class="input" style="max-width: 320px" type="search" placeholder="Nom ou e-mail…" [(ngModel)]="userSearch" (ngModelChange)="loadUsers()" aria-label="Rechercher un utilisateur" />
@@ -171,8 +155,9 @@ export class AdminPage {
   private readonly dialog = inject(DialogService);
   protected readonly api = inject(ApiService);
   protected readonly auth = inject(AuthService);
+  /** Segment d'adresse de l'onglet (lié par le routeur). */
+  readonly onglet = input<string>();
   protected readonly tabs: { id: Tab; label: string }[] = [
-    { id: 'dashboard', label: 'Tableau de bord' },
     { id: 'users', label: 'Utilisateurs' },
     { id: 'competitions', label: 'Compétitions' },
     { id: 'teams', label: 'Équipes' },
@@ -180,8 +165,8 @@ export class AdminPage {
   ];
   protected readonly competitionStatuses = Object.entries(COMPETITION_STATUS_LABELS);
   protected readonly gameStatuses = Object.entries(GAME_STATUS_LABELS);
-  protected readonly tab = signal<Tab>('dashboard');
-  protected readonly stats = signal<Stats | null>(null);
+  protected readonly tab = signal<Tab>('users');
+  protected readonly tabLabel = computed(() => this.tabs.find((t) => t.id === this.tab())?.label ?? '');
   protected readonly users = signal<EditableUser[]>([]);
   protected readonly competitions = signal<Competition[]>([]);
   protected readonly teams = signal<Team[]>([]);
@@ -192,7 +177,10 @@ export class AdminPage {
   protected readonly roles = Object.entries(ROLE_LABELS);
 
   constructor() {
-    this.open('dashboard');
+    effect(() => {
+      const tab = TAB_SLUGS[this.onglet() ?? ''] ?? 'users';
+      untracked(() => this.open(tab));
+    });
   }
 
   protected open(tab: Tab): void {
@@ -241,9 +229,6 @@ export class AdminPage {
 
   private reload(): void {
     switch (this.tab()) {
-      case 'dashboard':
-        this.api.stats().subscribe((s) => this.stats.set(s));
-        break;
       case 'users':
         this.loadUsers();
         break;
