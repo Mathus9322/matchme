@@ -16,7 +16,7 @@
   --rust-dark: #8b4d1c;
   --danger: #a3361f;
   --mono: 'DejaVu Sans Mono', ui-monospace, monospace;
-  --display: 'Liberation Serif', Georgia, serif;
+  --display: 'DejaVu Sans Condensed', 'Arial Narrow', 'Liberation Sans Narrow', sans-serif;
 
   font-family: 'DejaVu Sans', system-ui, sans-serif;
   color: var(--ink);

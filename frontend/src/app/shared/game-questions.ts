@@ -22,7 +22,7 @@ import { DialogService } from './dialog';
     @if (current(); as q) {
       <section class="current card" [class.revealed]="q.status === 'revealed'" aria-live="polite">
         <div class="current-head">
-          <span class="eyebrow" style="margin: 0"><span class="live-dot"></span> Question {{ q.position }}@if (q.rubric) { · {{ q.rubric }} }@if (q.points) { · {{ q.points }} pts }</span>
+          <span class="eyebrow" style="margin: 0"><span class="live-dot"></span> Question {{ displayPosition(q) }}@if (q.rubric) { · {{ q.rubric }} }@if (q.points) { · {{ q.points }} pts }</span>
           @if (manage() && q.status !== 'revealed') {
             <button class="btn btn-gold btn-sm" type="button" (click)="run(api.revealQuestion(q.id))" [disabled]="busy() || !inPlay()" [title]="inPlay() ? '' : pauseHint()"><app-icon name="eye" [size]="14" /> Révéler la réponse</button>
           }
@@ -76,7 +76,7 @@ import { DialogService } from './dialog';
         @if (questions().length) {
           <ng-template #managerItem let-q>
               <li [class.is-current]="q.id === g.current_question_id">
-                <span class="num">{{ q.position }}</span>
+                <span class="num">{{ displayPosition(q) }}</span>
                 <div class="body">
                   <p class="q">{{ q.question }}</p>
                   <p class="meta">
@@ -131,7 +131,7 @@ import { DialogService } from './dialog';
         <ol class="list">
           @for (q of history(); track q.id) {
             <li>
-              <span class="num">{{ q.position }}</span>
+              <span class="num">{{ displayPosition(q) }}</span>
               <div class="body">
                 <p class="q">{{ q.question }}</p>
                 <p class="meta">
@@ -229,7 +229,9 @@ export class GameQuestions {
   protected readonly current = computed(() => this.questions().find((q) => q.id === this.game().current_question_id) ?? null);
   protected readonly next = computed(() => {
     const current = this.current();
-    return this.questions().find((q) => q.status === 'pending' && (!current || q.position > current.position)) ?? null;
+    if (!current) return this.questions().find((q) => q.status === 'pending') ?? null;
+    const currentTag = this.rubricKey(current.rubric);
+    return this.questions().find((q) => q.status === 'pending' && this.rubricKey(q.rubric) === currentTag && q.position > current.position) ?? null;
   });
   protected readonly asked = computed(() => this.questions().filter((q) => q.status !== 'pending').length);
   /** Manager : questions restant à poser (dont la question en cours) et questions déjà posées, repliées. */
@@ -237,6 +239,18 @@ export class GameQuestions {
   protected readonly askedList = computed(() => this.questions().filter((q) => q.status !== 'pending' && q.id !== this.game().current_question_id).reverse());
   /** Historique public : questions posées, la plus récente en premier, hors question en cours. */
   protected readonly history = computed(() => this.questions().filter((q) => q.id !== this.game().current_question_id).reverse());
+
+  protected rubricKey(value: string | null): string {
+    return (value ?? '').trim() || 'Sans rubrique';
+  }
+
+  protected displayPosition(question: GameQuestion): number {
+    const key = this.rubricKey(question.rubric);
+    const sameRubric = this.questions()
+      .filter((q) => this.rubricKey(q.rubric) === key)
+      .sort((a, b) => a.position - b.position || a.id - b.id);
+    return sameRubric.findIndex((q) => q.id === question.id) + 1;
+  }
 
   protected teamName(teamId: number): string {
     const g = this.game();

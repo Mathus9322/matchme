@@ -28,8 +28,8 @@ import { Logo } from './shared/logo';
           <a class="brand" routerLink="/" aria-label="MatchMe, accueil"><app-logo [size]="34" /><span class="brand-word">match<span>me</span><i>.</i></span></a>
           <button class="menu-toggle" type="button" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-label="Menu"><app-icon name="menu" [size]="20" /></button>
           <nav class="nav" [class.open]="menuOpen()" (click)="menuOpen.set(false)">
-            <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Direct</a>
-            <a routerLink="/regarder" routerLinkActive="active"><app-icon name="eye" [size]="14" /> Code match</a>
+            <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Accueil</a>
+            <a routerLink="/regarder" routerLinkActive="active"><app-icon name="eye" [size]="14" /> Direct</a>
             <a routerLink="/competitions" routerLinkActive="active">Compétitions</a>
             <a routerLink="/equipes" routerLinkActive="active">Équipes</a>
             <a routerLink="/a-propos" routerLinkActive="active">À propos</a>

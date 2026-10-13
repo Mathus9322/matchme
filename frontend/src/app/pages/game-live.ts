@@ -96,7 +96,7 @@ import { DialogService } from '../shared/dialog';
         </div>
       </section>
 
-      @if (g.rubrics?.length) {
+      @if (showRubrics(g)) {
         <section class="rubric-bar card">
           <div class="rubric-tabs" role="tablist" aria-label="Rubriques">
             @for (r of g.rubrics; track r.id; let i = $index) {
@@ -455,9 +455,11 @@ export class GameLivePage implements OnInit {
     return rubrics.find((r) => r.id === game?.current_rubric_id) ?? rubrics[0] ?? null;
   });
 
-  /** Seul le manager du match avance les rubriques, et seulement pendant le jeu (pas à la mi-temps). */
+  protected readonly showRubrics = (game: Game): boolean => !!game.rubrics?.length && game.status === 'live' && game.current_question_id != null;
+
+  /** Seul le manager du match avance les rubriques, et seulement pendant le jeu avec une question active (pas à la mi-temps). */
   protected canAdvanceRubric(game: Game): boolean {
-    return !!game.can_manage && game.status === 'live' && game.phase !== 'halftime';
+    return !!game.can_manage && game.status === 'live' && game.phase !== 'halftime' && game.current_question_id != null;
   }
 
   protected goToRubric(game: Game, rubricId: number): void {

@@ -8,16 +8,25 @@ import { GameRow } from '../shared/game-row';
 import { BackButton } from '../shared/back-button';
 import { Icon } from '../shared/icon';
 import { PlayerStatsModal } from '../shared/player-stats-modal';
+import { Modal } from '../shared/modal';
 
 /** Fiche publique d'une équipe : bilan, effectif et statistiques des joueurs. */
 @Component({
   selector: 'app-team-detail',
-  imports: [BackButton, RouterLink, Avatar, GameRow, Icon, PlayerStatsModal],
+  imports: [BackButton, RouterLink, Avatar, GameRow, Icon, PlayerStatsModal, Modal],
   template: `
     <app-back-button [fallback]="area.link('equipes')" />
     @if (stats(); as s) {
       <section class="hero">
-        <app-avatar [src]="s.team.logo_url" [name]="s.team.name" [size]="112" shape="square" />
+        @if (s.team.logo_url) {
+          <button class="team-logo-btn" type="button" (click)="logoOpen.set(true)" [attr.aria-label]="'Voir le logo de ' + s.team.name">
+            <app-avatar [src]="s.team.logo_url" [name]="s.team.name" [size]="112" shape="square" />
+          </button>
+        } @else {
+          <div class="team-logo-placeholder" aria-label="Aucun logo pour {{ s.team.name }}">
+            <app-avatar [src]="null" [name]="s.team.name" [size]="112" shape="square" />
+          </div>
+        }
         <div class="hero-text">
           <p class="eyebrow">Fiche équipe{{ s.team.city ? ' · ' + s.team.city : '' }}</p>
           <h1 class="page-title">{{ s.team.name }}</h1>
@@ -115,6 +124,13 @@ import { PlayerStatsModal } from '../shared/player-stats-modal';
         </section>
       </div>
 
+      <app-modal [open]="logoOpen()" title="Logo de {{ stats()?.team.name ?? 'l’équipe' }}" eyebrow="Équipe" (closed)="logoOpen.set(false)">
+        @if (stats()?.team.logo_url) {
+          <div class="logo-modal-body">
+            <img [src]="stats()!.team.logo_url" [alt]="'Logo ' + stats()!.team.name" />
+          </div>
+        }
+      </app-modal>
       <app-player-stats-modal [playerId]="playerId()" (closed)="playerId.set(null)" />
     } @else if (notFound()) {
       <p class="empty">Équipe introuvable.</p>
@@ -122,8 +138,13 @@ import { PlayerStatsModal } from '../shared/player-stats-modal';
   `,
   styles: `
     .hero { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
+    .team-logo-btn { padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 18px; transition: transform .15s ease, box-shadow .15s ease; }
+    .team-logo-btn:hover { transform: translateY(-2px); box-shadow: 0 20px 24px -20px rgba(43, 34, 25, .5); }
+    .team-logo-placeholder { display: inline-flex; border-radius: 18px; overflow: hidden; opacity: .8; }
     .hero-text { flex: 1; min-width: 240px; }
     .form { display: inline-flex; gap: 3px; }
+    .logo-modal-body { display: grid; place-items: center; min-height: 260px; }
+    .logo-modal-body img { display: block; max-width: min(72vw, 420px); max-height: 70vh; border-radius: 18px; object-fit: contain; background: var(--paper); }
     .res { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; font-family: var(--mono); font-size: 10px; font-weight: 700; }
     .res-V { background: var(--ochre); color: var(--ink); }
     .res-N { background: var(--sand); color: var(--ink); }
@@ -159,6 +180,7 @@ export class TeamDetailPage implements OnInit {
   readonly id = input.required<string>();
   protected readonly stats = signal<TeamStats | null>(null);
   protected readonly notFound = signal(false);
+  protected readonly logoOpen = signal(false);
   protected readonly playerId = signal<number | null>(null);
   protected readonly statuses = COMPETITION_STATUS_LABELS;
 
